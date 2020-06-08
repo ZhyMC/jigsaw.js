@@ -110,6 +110,8 @@ return a+b;
 其中第一个参数是路径，第二个参数是传递的数据，该参数必须是一个对象。  
 若该参数是undefined或者不填，则相当于是传递了空对象```{}```。  
   
+返回值是一个Promise，会直接返回远程调用的结果。（如果该结果为空，则一定是null）
+
 路径的格式由 jigsaw名 + 冒号 + 接口名 组成。  
 ```
 jg.send("gun:shoot",{bullets:10});
@@ -144,6 +146,25 @@ console.log(`${portname}接口收到了数据`,data);
 })
 
 ```
+
+### 1.4.5 jigsaw.prototype.dighole(targetjigsaw)  :  [Promise]
+
+	向目标的jigsaw打一个"洞"，目标jigsaw通过该"洞"可以稳定的访问本jigsaw。
+
+	你可以像这样向"洞"发送数据，就和jigsaw的远程调用方法是一样的
+```
+	
+	jg.port("call",()=>{
+			console.log("我被调用了")；
+		})；
+	
+	let hole=await jg.dighole("target");
+	
+	jg.send(`${hole}:call`);
+
+
+```
+
   
 ### 1.5 负载均衡  
   
