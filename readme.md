@@ -55,7 +55,7 @@ return {msg:`我已经发射了${bullets}颗子弹`}；
 ---------
 index.js  
 ```
-let {jigsawdomain,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
+let {domainserver,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
 //第一个参数指的是需要绑定到的网卡IP地址，一般默认为127.0.0.1表示绑定到本机IP地址，这样的情况下，所有Jigsaw实例只能在本机内任意通信。
 //第二个参数指的是domainserver域名服务器所在主机的IP地址。默认是本机。
 
@@ -63,7 +63,7 @@ let {jigsawdomain,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
 
 let {fork}=require("child_process");
 
-jigsawdomain();//一个Jigsaw网络内至少要启动一个域名服务器，所有Jigsaw实例都可以使用该域名服务器
+domainserver();//一个Jigsaw网络内至少要启动一个域名服务器，所有Jigsaw实例都可以使用该域名服务器
 
 webserver(1793);//本行可以不写，本行可以启动一个访问Jigsaw网络的Web服务器。
 
