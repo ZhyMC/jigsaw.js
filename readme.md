@@ -170,10 +170,10 @@ console.log(`${portname}接口收到了数据`,data);
   
 分别是：  
   
-①dighole.js ： 测试打洞功能。  
-②prefTest.js : 500并发性能测试，用于测试jigsaw在大量并发下是否能稳定工作。  
-③simpletest.js : 普通的功能测试，例如异常通过网络冒泡的功能。  
-④weblargetest.js :   较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
+①```dighole.js``` ： 测试打洞功能。  
+②```prefTest.js``` : 500并发性能测试，用于测试jigsaw在大量并发下是否能稳定工作。  
+③```simpletest.js``` : 普通的功能测试，例如异常通过网络冒泡的功能。  
+④```weblargetest.js``` :   较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
   
    
 ### 1.6 负载均衡  
