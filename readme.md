@@ -80,7 +80,7 @@ fork("gun.js");
   
 ### 1.4 API 接口
   
-#### 1.4.1 jigsaw.prototype.constructor(jgname)
+### 1.4.1 jigsaw.prototype.constructor(jgname)
   
 jigsaw类的构造器，第一个参数是jigsaw的名字，jigsaw的名字是很重要的，可以用来对实例进行命名空间分配，也可以通过名字访问其它jigsaw实例。  
 
@@ -88,7 +88,7 @@ jigsaw类的构造器，第一个参数是jigsaw的名字，jigsaw的名字是�
 let jg = new jigsaw("myjigsaw");
 ```
   
-#### 1.4.2 jigsaw.prototype.port(name,func)  
+### 1.4.2 jigsaw.prototype.port(name,func)  
   
 为jigsaw实例声明一个接口，第一个参数是接口名，第二个参数是该接口被调用后触发的函数，该函数可以是一个异步函数（async function）。  
   
