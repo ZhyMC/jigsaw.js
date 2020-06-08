@@ -159,18 +159,28 @@ console.log(`${portname}接口收到了数据`,data);
 		})；
 	
 	let hole=await jg.dighole("target");
-	
+
 	jg.send(`${hole}:call`);
 
 
 ```
-
+### 1.5 测试
   
-### 1.5 负载均衡  
+项目文件夹的 ```test``` 目录下有几个测试，可以通过git clone该项目，并使用node运行测试。  
+  
+分别是：  
+  
+①dighole.js ： 测试打洞功能。  
+②prefTest.js : 500并发性能测试，用于测试jigsaw在大量并发下是否能稳定工作。  
+③simpletest.js : 普通的功能测试，例如异常通过网络冒泡的功能。  
+④weblargetest.js :   较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
+  
+   
+### 1.6 负载均衡  
   
 暂无正文...  
   
   
-### 1.6 命名空间  
+### 1.7 命名空间  
   
 暂无正文...  
