@@ -6,8 +6,12 @@
     "node-fetch": "^2.6.0",
     "pick-port": "^1.0.0"
   },
-  "license": "GPLv2", 
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZhyMC/jigsaw.js"
+  },
+  "license": "GPLv2",
   "main": "index.js",
   "name": "jigsaw.js",
-  "version": "3.7.0"
+  "version": "3.7.1"
 }
