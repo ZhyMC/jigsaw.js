@@ -36,7 +36,7 @@ class producer{
 
 		
 		await this.domclient.update();
-		await sleep(2000);
+//		await sleep(2000);
 
 		this.ready=true;
 	}

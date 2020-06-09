@@ -11,7 +11,7 @@ class producer{
 	async handleRequest(req,res){
 		let {path,query}=url.parse(req.url);
 		let q=qs.parse(query);
-		//console.log(q)
+		
 		let ret=await this.ports[q.method](JSON.parse(Buffer.from(q.data,"base64").toString()));
 		//console.log("ret",ret,JSON.stringify(ret));
 		if(!ret)ret=null;

@@ -1,6 +1,7 @@
 var fetch = require("node-fetch");
 var url = require("url");
 var qs = require("querystring");
+var sleep = (t)=>new Promise((y)=>setTimeout(y,t));
 
 class request{
 	constructor(addr,method,data){
@@ -33,8 +34,19 @@ class consumer{
 		let built = new request(this.prodaddr,method,data);
 		let url = built.buildUrl();
 		//console.log(url);
-		
-		return await fetch(url).then((x)=>x.json());
+		let ret={};
+		while(true){
+			try{
+				ret=await fetch(url).then((x)=>x.json());
+				break;
+			}catch(e){
+
+			}
+
+			await sleep(500);
+		}
+
+		return ret;
 	}
 }
 

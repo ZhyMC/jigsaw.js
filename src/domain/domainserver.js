@@ -21,7 +21,10 @@ class domainserver{
 	}
 	getinfo({jgname}){
 		//console.log("query",jgname);
-		return [this.domains[jgname]];
+		let res=this.domains[jgname];
+		if(!res)return [];
+
+		return [res];
 	}
 
 	setoption({jgname,option}){
