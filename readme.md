@@ -198,6 +198,9 @@ ticket@3
 await jigsaw.setoption("ticket",{jgcount:4});
 
 ```
+### 1.4.7 jigsaw.prototype.close()
+
+直接关闭 jigsaw 实例，jigsaw内部的套接字实例、保持连接的域名客户端也会因此被关闭。
 
 ### 1.5 测试
   
@@ -211,6 +214,8 @@ await jigsaw.setoption("ticket",{jgcount:4});
 ④```weblargetest.js``` : 较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
 ⑤```loadbalanced.js``` : 负载均衡测试，测试各个实例能否随机平分请求。  
 ⑥```delayStart.js``` : 域名服务器延迟启动测试，用于测试与域名服务器的连接健壮性。  
+⑦```closetest.js``` : 测试能否正常关闭jigsaw实例。  
+
   
   
    
