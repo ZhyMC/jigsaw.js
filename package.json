@@ -6,7 +6,7 @@
     "node-fetch": "^2.6.0",
     "pick-port": "^1.0.0"
   },
-  "license": "MIT",
+  "license": "GPLv2", 
   "main": "index.js",
   "name": "jigsaw.js",
   "version": "3.7.0"
