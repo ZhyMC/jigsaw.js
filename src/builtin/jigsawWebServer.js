@@ -181,6 +181,8 @@ if (cluster.isMaster) {
 	new MasterDeamon();
 	
 	var numCPUs = require('os').cpus().length;
+	if(numCPUs <= 0) numCPUs=1;
+
 	logger.log("#WebServer#","服务器已启动于 :" + PORT +" ( x" + numCPUs);
 
 	for (var i = 0; i < numCPUs; i++) {
