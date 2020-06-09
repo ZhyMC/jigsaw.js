@@ -16,36 +16,44 @@ class domainclient {
 
         this.consumer = new consumer(this.jgenv.domainserver);
     }
-    async update() { //向域名服务器同步一次域名客户端的信息
+    static setoption(name,data,jgenv){
+        return domainclient._stableSend(new consumer(jgenv.domainserver),name,"setoption",{jgname:name,option:data},(ret)=>(ret),`对[${name}]向域名服务器执行 setoption 花费较长时间...`);
+    }
+    async _send(method,data,condi,timeoutTip){
+        return domainclient._stableSend(this.consumer,this.clientinfo.name,method,data,condi,timeoutTip);
+    }
+    static async _stableSend(consumer,name,method,data,condi,timeoutTip){
         let timer=setTimeout(()=>{
-            logger.log(this.clientinfo.name,"向域名服务器更新地址花费较长时间...");
+            logger.log(name,timeoutTip);
         },5000);
-        let updated=await this.consumer.send("update",{jgname:this.clientinfo.name,addr:`${this.jgenv.interfaceip}:${this.clientinfo.port}`});
+        let ret;
+
+        while(true){
+            try{
+
+                ret=await consumer.send(method,data);
+                if(condi(ret))break;
+            }catch(e){
+                    
+            }
+
+            await sleep(100);
+
+        }
         clearTimeout(timer);
-        return updated;
+
+        return ret;
+    }
+    async update() { //向域名服务器同步一次域名客户端的信息
+        return this._send("update",{jgname:this.clientinfo.name,addr:`${this.jgenv.interfaceip}:${this.clientinfo.port}`},(ret)=>(ret),"向域名服务器更新地址花费较长时间...")
     }
     async getAddress(jgname) { //向域名服务器请求一次域名客户端的网络信息
         if (this._addrcached[jgname] && (new Date().getTime() - this._addrcached[jgname].start) < 30 * 1000) {
             return this._addrcached[jgname].addr;
         }
 
-        let timer=setTimeout(()=>{
-            logger.log(this.clientinfo.name,`向域名服务器获取[${jgname}]的地址花费较长时间...`);
-        },5000);
 
-        let ad=[];
-        while(true){
-            try{
-                ad=await this.consumer.send("getinfo",{jgname});
-                if(ad.length>0)break;
-            }catch(e){
-
-            }    
-
-            await sleep(100);
-        }
-
-        clearTimeout(timer);
+        let ad=await this._send("getinfo",{jgname},(ret)=>(ret.length>0),`向域名服务器获取[${jgname}]的地址花费较长时间...`);
         
 
          if (!this._addrcached[jgname]) this._addrcached[jgname] = {};

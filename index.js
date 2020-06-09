@@ -11,6 +11,10 @@ module.exports=(a,b)=>{
 	function newJigsawInstance(name,options){
 		return new jigsaw(name,new jgenv(a,b),options);
 	}
+	newJigsawInstance.setoption=(name,option)=>{
+		return jigsaw.setoption(name,option,new jgenv(a,b));
+	};
+
 	function startDomainServer(){
 		fork(__dirname+"/src/domain/domainserver.js");
 	}

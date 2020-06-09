@@ -170,7 +170,7 @@ console.log(`${portname}接口收到了数据`,data);
 
 
 ```
-### 1.4.6 jigsaw.setoption(jgname,option) : [Promise]  （暂未实现）
+### 1.4.6 jigsaw.setoption(jgname,option) : [Promise] 
 	对特定的jigsaw名进行配置选项，该配置会一直保存在域名服务器上。  
 该选项对象中有如下属性  
   

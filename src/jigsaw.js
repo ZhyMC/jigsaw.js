@@ -56,8 +56,8 @@ class jigsaw{
 	dighole(jgname){
 		return this.send(`${jgname}:#DIGHOLE#`,{});
 	}
-	static setcount(name,count){
-		domainclient.setCount(name,count);
+	static setoption(name,data,jgenv){
+		return domainclient.setoption(name,data,jgenv);
 	}
 	async ready(){
 		await waitfor(()=>this.ready);
