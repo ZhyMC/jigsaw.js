@@ -76,8 +76,39 @@ fork("gun.js");
 此处只是一个最简单的用法，对于Web应用的复杂用法可以参考分布式架构的设计，之后会在文档中详细说明。  
 关于物联网相关的用法，文档之后也会补充。  
   
-#### 1.3.2 暂无正文...
-  
+#### 1.3.2 简单的 Web应用 接口服务器
+```
+ let {jigsaw,domainserver,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
+ domainserver();
+ webserver(80);
+
+
+ let accounts=[];
+
+ jg.port("register",({username,password})=>{
+ 	let userid=accounts.length;
+	accounts[userid]={userid,password,token:""};
+
+	return {error:false,msg:`注册成功!你的账号是:${userid}`}
+
+});
+
+jg.port("login",({userid,password})=>{
+	if(!accounts[userid])return {error:true,msg:"系统中不存在该账户"};
+
+	if(accounts[userid].password == password){
+		let token=Math.random()+"";
+		accounts[userid].token=token;
+
+		return {error:false,msg:`登录成功!你的登录态令牌:${token}`}
+	}else
+		return {error:true,msg:"登录失败,密码错误!"};
+
+})
+
+```
+
+
 ### 1.4 API 接口
   
 ### 1.4.1 jigsaw.prototype.constructor(jgname)
@@ -199,9 +230,11 @@ await jigsaw.setoption("ticket",{jgcount:4});
 
 ```
 ### 1.4.7 jigsaw.prototype.close()
-
-直接关闭 jigsaw 实例，jigsaw内部的套接字实例、保持连接的域名客户端也会因此被关闭。
-
+  
+直接关闭 jigsaw 实例，jigsaw内部的套接字实例、保持连接的域名客户端也会因此被关闭。  
+  
+  
+------------------
 ### 1.5 测试
   
 项目文件夹的 ```test``` 目录下有几个测试，可以通过git clone该项目，并使用node运行测试。  
