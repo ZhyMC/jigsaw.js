@@ -28,6 +28,10 @@ class jigsaw{
 		this.producer.options=options;
 		this.consumer.options=options;
 	}
+	close(){
+		this.sock.close();
+		this.domclient.close();
+	}
 	async init(){
 
 		await this.sock.init();

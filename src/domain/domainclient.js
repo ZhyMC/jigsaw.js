@@ -37,7 +37,7 @@ class domainclient {
         this._ready=true;
 
         while(!this.dead){
-            //console.log("update");
+//            console.log("update",this.clientinfo.name);
             await sleep(this.freq *(1 + 0.3 * Math.random())); //随机量防止冲击波峰
         }
     }

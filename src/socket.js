@@ -29,6 +29,9 @@ class socket{
 	getPort(){
 		return this._port;
 	}
+	close(){
+		this.sock.close();
+	}
 	send(direction,data,port,ip){
 		let prefix=Buffer.alloc(2);
 		prefix.writeUInt16BE(this.typemap[direction],0);
