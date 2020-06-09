@@ -209,6 +209,9 @@ await jigsaw.setoption("ticket",{jgcount:4});
 ②```prefTest.js``` : 500并发性能测试，用于测试jigsaw在大量并发下是否能稳定工作。  
 ③```simpletest.js``` : 普通的功能测试，例如异常通过网络冒泡的功能。  
 ④```weblargetest.js``` : 较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
+⑤```loadbalanced.js``` : 负载均衡测试，测试各个实例能否随机平分请求。  
+⑥```delayStart.js``` : 域名服务器延迟启动测试，用于测试与域名服务器的连接健壮性。  
+  
   
    
 ### 2.1 负载均衡 与 网络IO
