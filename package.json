@@ -15,8 +15,13 @@
     "type": "git",
     "url": "https://github.com/ZhyMC/jigsaw.js"
   },
-  "license": "GPLv2",
+  "licenses": [
+    {
+      "type": "GPLv2",
+      "url": "http://www.gnu.org/licenses/old-licenses/gpl-2.0.html"
+    }
+  ],
   "main": "index.js",
   "name": "jigsaw.js",
-  "version": "3.7.2"
+  "version": "3.7.3"
 }
