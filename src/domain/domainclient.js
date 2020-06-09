@@ -6,15 +6,40 @@ var sleep = (t) =>new Promise((y) =>setTimeout(y, t));
 
 var consumer = require(__dirname+"/miniJigsaw/consumer.js");
 var logger = require(__dirname+"/../logger.js");
+var waitfor = require(__dirname+"/../utils/waitfor.js");
 
 class domainclient {
-    constructor(clientinfo, jgenv) { //客户端名,客户端网络端口,客户端环境
+    constructor(jgenv) { //客户端名,客户端网络端口,客户端环境
         this._addrcached = {};
 
-        this.clientinfo = clientinfo;
+        //this.clientinfo = clientinfo;
         this.jgenv = jgenv;
-
+        this.dead = false;
+        this._ready = false;
         this.consumer = new consumer(this.jgenv.domainserver);
+
+        this.freq = 20 * 1000;//20秒向服务器报告一次网络位置
+    }
+    setClientInfo(clientinfo){
+        this.clientinfo=clientinfo;
+    }
+    close(){
+        this.dead = true;
+    }
+    ready(){
+        return waitfor(()=>this._ready);
+    }
+    init(){
+        this.updateLoop();
+    }
+    async updateLoop(){
+        await this.update();
+        this._ready=true;
+
+        while(!this.dead){
+            //console.log("update");
+            await sleep(this.freq *(1 + 0.3 * Math.random())); //随机量防止冲击波峰
+        }
     }
     static setoption(name,data,jgenv){
         return domainclient._stableSend(new consumer(jgenv.domainserver),name,"setoption",{jgname:name,option:data},(ret)=>(ret),`对[${name}]向域名服务器执行 setoption 花费较长时间...`);

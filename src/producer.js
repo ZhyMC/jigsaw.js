@@ -8,7 +8,7 @@ var responsemanager=require(__dirname+"/responsemanager.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
 
 class producer{
-	constructor(name,jgenv,sock,options){
+	constructor(name,jgenv,sock,domclient,options){
 		if(!options)options={};
 
 		this.ports={};
@@ -21,9 +21,11 @@ class producer{
 		this.responsemanager=new responsemanager();
 		this.slicebuilder=new slicebuilder();
 
+
 		this.sock=sock;
 		this.options=options;
 
+		this.domclient=domclient;
 	}
 	async init(){
 
@@ -31,11 +33,7 @@ class producer{
 		this.initSystemPorts();
 
 		await this.initServerSocket();
-
-		this.domclient=new domainclient({name:this.name,port:this.sock.getPort()},this.jgenv);
-
 		
-		await this.domclient.update();
 //		await sleep(2000);
 
 		this.ready=true;

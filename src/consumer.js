@@ -7,7 +7,7 @@ var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
 
 class consumer{
-	constructor(name,jgenv,sock,options){
+	constructor(name,jgenv,sock,domclient,options){
 
 		this.name=name;
 		this.jgenv=jgenv;
@@ -17,7 +17,7 @@ class consumer{
 		this.ready=false;
 
 
-		this.domclient=new domainclient({},this.jgenv);
+		this.domclient=domclient;
 
 		this.slicebuilder=new slicebuilder();
 
@@ -124,7 +124,7 @@ class consumer{
 		let jgpo=packet.parsePath(path);
 
 		let arr=await this.domclient.getAddress(jgpo.jg);
-
+		
 		if(arr.length<=0)return false;
 
 		let chosen=arr[parseInt(Math.random()*arr.length)]

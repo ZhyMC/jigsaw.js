@@ -14,23 +14,33 @@ class jigsaw{
 		this.jgenv=jgenv;
 		this.sock=new socket();
 
-		this.producer=new producer(name,jgenv,this.sock,options);
-		this.consumer=new consumer(name,jgenv,this.sock,options);
+		this._ready=false;
+
+		this.domclient=new domainclient(this.jgenv);
+		
+		this.producer=new producer(name,jgenv,this.sock,this.domclient,options);
+		this.consumer=new consumer(name,jgenv,this.sock,this.domclient,options);
 
 		this.init();
 
-		this._ready=false;
 	}
 	setOption(options){
 		this.producer.options=options;
 		this.consumer.options=options;
 	}
 	async init(){
+
 		await this.sock.init();
+		await this.sock.ready();
+
+		this.domclient.setClientInfo({name:this.name,port:this.sock.getPort()});
+
+		this.domclient.init();
+		await this.domclient.ready();
+
 		await this.producer.init();
 		await this.consumer.init();
 
-		
 		if(!this.isAnonymous()){		
 			logger.log(this.name,"模块已启动");
 		}
