@@ -79,17 +79,21 @@ fork("gun.js");
 关于物联网相关的用法，文档之后也会补充。  
   
 #### 1.3.2 简单的 Web应用 接口服务器
+
+该文件在```examples/simpleaccount.js```
 ```
- let {jigsaw,domainserver,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
+let {jigsaw,domainserver,webserver}=require("../index.js")("127.0.0.1","127.0.0.1");
  domainserver();
  webserver(80);
 
 
  let accounts=[];
 
- jg.port("register",({username,password})=>{
+let jg=new jigsaw("account");
+
+jg.port("register",({username,password})=>{
  	let userid=accounts.length;
-	accounts[userid]={userid,password,token:""};
+	accounts[userid]={userid,username,password,token:""};
 
 	return {error:false,msg:`注册成功!你的账号是:${userid}`}
 
@@ -98,19 +102,27 @@ fork("gun.js");
 jg.port("login",({userid,password})=>{
 	if(!accounts[userid])return {error:true,msg:"系统中不存在该账户"};
 
+
 	if(accounts[userid].password == password){
 		let token=Math.random()+"";
 		accounts[userid].token=token;
 
-		return {error:false,msg:`登录成功!你的登录态令牌:${token}`}
+		return {error:false,msg:`登录成功!欢迎你,${accounts[userid].username},你的登录态令牌:${token}`}
 	}else
 		return {error:true,msg:"登录失败,密码错误!"};
 
 })
 
 ```
+用```node simpleaccount.js```启动后。  
+  
+可以通过  
+```http://127.0.0.1/account/register?username=testuser&password=123```  
+```http://127.0.0.1/account/login?userid=0&password=123```  
+进行测试  
+  
 
-
+---------------------
 ### 1.4 API 接口
   
 ### 1.4.1 jigsaw.prototype.constructor(jgname)
