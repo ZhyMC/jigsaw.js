@@ -5,7 +5,7 @@ var logger=require(__dirname+"/logger.js");
 var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
 var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
-var Q=require("Q");
+var Q=require("q");
 
 class consumer{
 	constructor(name,jgenv,sock,domclient,options){
