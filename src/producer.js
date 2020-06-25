@@ -26,11 +26,10 @@ class producer{
 		this.options=options;
 
 		this.domclient=domclient;
+
+
 	}
 	async init(){
-
-
-		this.initSystemPorts();
 
 		await this.initServerSocket();
 		
@@ -38,23 +37,13 @@ class producer{
 
 		this.ready=true;
 	}
-	async initSystemPorts(){
-		this.initDigHolePort();
-
-	}
 	async initServerSocket(){
 
 		this.sock.onmessage("producer",(data,rinfo)=>this._handleMessage(data,rinfo));
 
 		await this.sock.ready();
 	}
-	initDigHolePort(){
-		this.port("#DIGHOLE#",(obj,rdata)=>{
-			let {address,port}=rdata.rinfo;
 
-			return `[${address}:${port}]`;
-		});
-	}
 	_ready(){
 		return waitfor(()=>this.ready);
 	}

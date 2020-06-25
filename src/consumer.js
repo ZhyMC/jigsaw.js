@@ -56,11 +56,11 @@ class consumer{
 
 	}
 	async send(path,obj){
-		await this._ready();
-
 		return await this._send(path,obj);
 	}
-	async _send(path,obj,sock){
+	async _send(path,obj){
+		await this._ready();
+
 		if(typeof(obj)!="object")
 			obj={};
 
@@ -80,7 +80,8 @@ class consumer{
 			po=parsedrname.port;
 
 		}else{
-			let chosen=await this.chooseJigsaw(path);
+			let	chosen=await this.chooseJigsaw(path);
+
 			if(!chosen)return null;
 			let split=chosen.addr.split(":");
 			
@@ -93,15 +94,14 @@ class consumer{
 
 		let req=this.buildRequest(obj,target_jgname,jgpo.port);
 
-		return this.sendRequest(req,ip,po,sock);
+		return this.sendRequest(req,ip,po);
 
 	}
-	sendRequest(req,ip,po,sock){
+	sendRequest(req,ip,po){
 		return this.doResend(req.reqid,req.tagdatas,ip,po,{
 			resend:0,
 			maxloop:10000,
-			retry:20,
-			sock
+			retry:20
 		});
 	}
 	buildRequest(obj,jgname,jgport,reqid){
@@ -174,7 +174,7 @@ class consumer{
 		delete this.requests[reqid];
 	
 		this.handleException(ret);
-		if(timeout)throw `[Jigsaw] Jigsaw Timeout Exception at Module '${this.name}'`
+		if(timeout)throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
 
 		return ret;
 	}

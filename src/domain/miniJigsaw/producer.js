@@ -12,6 +12,7 @@ class producer{
 		let {path,query}=url.parse(req.url);
 		let q=qs.parse(query);
 		
+		
 		let ret=await this.ports[q.method](JSON.parse(Buffer.from(q.data,"base64").toString()));
 		//console.log("ret",ret,JSON.stringify(ret));
 		if(!ret)ret=null;

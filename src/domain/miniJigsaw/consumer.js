@@ -1,4 +1,4 @@
-var fetch = require("node-fetch");
+var Request = require("request");
 var url = require("url");
 var qs = require("querystring");
 var sleep = (t)=>new Promise((y)=>setTimeout(y,t));
@@ -22,6 +22,18 @@ class request{
 			})
 		});
 	}
+	req(){
+		return new Promise((resolve,reject)=>{
+			Request.get({
+				url:this.buildUrl(),
+				timeout:2000
+			},(err,res,body)=>{
+				if(err){reject(err);return;}
+				resolve(body)
+			})			
+		})
+
+	}
 }
 
 
@@ -29,21 +41,23 @@ class request{
 class consumer{
 	constructor(prodaddr){
 		this.prodaddr=prodaddr;
+		this.maxretry=5;
 	}
 	async send(method,data){
 		let built = new request(this.prodaddr,method,data);
-		let url = built.buildUrl();
-		//console.log(url);
 		let ret={};
+		let retry=0;
 		while(true){
 			try{
-				ret=await fetch(url).then((x)=>x.json());
+				ret=JSON.parse(await built.req());
 				break;
 			}catch(e){
 
 			}
 
-			await sleep(500);
+			if(retry++>=this.maxretry)throw new Error("timeout");
+
+			await sleep(100);
 		}
 
 		return ret;

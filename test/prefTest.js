@@ -34,6 +34,8 @@ let accepted=0;
 
 	await Promise.all(promises);
 	console.log(`finished, accepted ${accepted} of ${total}`);
+
+
 }
 
 

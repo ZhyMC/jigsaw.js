@@ -16,10 +16,10 @@ module.exports=(a,b)=>{
 	};
 
 	function startDomainServer(){
-		fork(__dirname+"/src/domain/domainserver.js");
+		return fork(__dirname+"/src/domain/domainserver.js");
 	}
 	function startWebServer(port,cert){
-		fork(__dirname+"/src/builtin/jigsawWebServer.js",[jgo.serialize(),port,cert?JSON.stringify(cert):"{}"])
+		return fork(__dirname+"/src/builtin/jigsawWebServer.js",[jgo.serialize(),port,cert?JSON.stringify(cert):"{}"])
 	}
 	function setJigsawOption(name,option){
 		jigsaw.setoption(name,option);
