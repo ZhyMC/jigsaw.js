@@ -5,6 +5,7 @@ var logger=require(__dirname+"/logger.js");
 var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
 var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
+var Q=require("Q");
 
 class consumer{
 	constructor(name,jgenv,sock,domclient,options){
@@ -99,9 +100,8 @@ class consumer{
 	}
 	sendRequest(req,ip,po){
 		return this.doResend(req.reqid,req.tagdatas,ip,po,{
-			resend:0,
-			maxloop:10000,
-			retry:20
+			resend:50,
+			timeout:10000
 		});
 	}
 	buildRequest(obj,jgname,jgport,reqid){
@@ -136,45 +136,43 @@ class consumer{
 
 	async doResend(reqid,tagdatas,ip,po,options){
 		//监测回复包并重发,如果规定的时间条件内还是没有回复包，会抛出异常，否则返回回复包
-		this.requests[reqid]={};
+		//
+		let defer=Q.defer();
+		this.requests[reqid]={data_defer:defer};
 	
+
 		let sock=this.sock;
 
 		for(let tagdata of tagdatas)
 			sock.send("producer",tagdata,po,ip);
 
-		let timeout=true;
-		let {resend,maxloop,retry}=options;
+		let isTimeout=false;
+		let {resend,timeout}=options;
 		let ret=null;
 
 
 		let queue=0;
 
-		for(let i=0;i<maxloop;i++){
-			if(resend++>maxloop/retry){
-				for(let tagdata of tagdatas)
-					sock.send("producer",tagdata,po,ip);
-				resend=0;
-			}
+		setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
-			if(this.requests[reqid].data)			
-			{
 
-				let dt=this.requests[reqid].data+"";
-				ret=JSON.parse(dt);
+		let resender=setInterval(()=>{
+			for(let tagdata of tagdatas)
+				sock.send("producer",tagdata,po,ip);
+		},resend);
 
-				timeout=false;
-			break;
-			}
-			await sleep(1);
-
+		try{
+			ret=JSON.parse((await defer.promise)+"");
+		}catch(e){
+			isTimeout=true;
 		}
 
+		clearInterval(resender);
 
 		delete this.requests[reqid];
 	
 		this.handleException(ret);
-		if(timeout)throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
+		if(isTimeout)throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
 
 		return ret;
 	}
@@ -201,7 +199,10 @@ class consumer{
 		if(!full)return;
 		if(!this.requests[id])return;
 
-		this.requests[id].data=full;
+
+		this.requests[id].data_defer.resolve(full);
+
+//		this.requests[id].data=full;
 		
 	}
 }

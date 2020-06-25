@@ -13,9 +13,11 @@ var jg2=new jigsaw();
 
 
 async function startTest(){ //500并发测试
-let total=500;
+let total=3000;
 let accepted=0;
 
+await jg2.send("test:get",{});//缓存一下网络地址
+console.time("cost");
 
 	var promises=[];
 	for(let i=0;i<total;i++){
@@ -23,16 +25,22 @@ let accepted=0;
 		let promise=(async()=>{
 			let randomid=Math.random();
 			let ret=await jg2.send("test:get",{randomid});
-			console.log(ret);
 			if(ret.randomid==randomid)
 				accepted++;
+			return ret;
 		})();
 
-		promises.push(promise);
 
+		promise.catch((e)=>console.log(e));
+		promises.push(promise);
 	}
 
-	await Promise.all(promises);
+	let result=await Promise.all(promises);
+
+
+console.timeEnd("cost");
+
+	console.log(result)
 	console.log(`finished, accepted ${accepted} of ${total}`);
 
 
