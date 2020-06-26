@@ -74,6 +74,7 @@ class domainclient {
         let ad=await this._send("getinfo",{jgname});
         //`向域名服务器获取[${jgname}]的地址花费过长时间`
 
+
          if (!this._addrcached[jgname]) this._addrcached[jgname] = {};
         this._addrcached[jgname].start = new Date().getTime();
         this._addrcached[jgname].addr = ad;

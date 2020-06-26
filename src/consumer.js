@@ -124,10 +124,13 @@ class consumer{
 		let jgpo=packet.parsePath(path);
 
 		let arr=await this.domclient.getAddress(jgpo.jg);
-		
+
 		if(arr.length<=0)return false;
 
-		let chosen=arr[parseInt(Math.random()*arr.length)]
+		let index=Math.floor(Math.random()*arr.length);
+		let chosen=arr[index]
+
+-
 		if(!chosen || chosen == null)return false;
 		if(chosen.addr.indexOf(":")==-1)return false;
 
@@ -163,6 +166,7 @@ class consumer{
 
 		try{
 			ret=JSON.parse((await defer.promise)+"");
+			
 		}catch(e){
 			isTimeout=true;
 		}

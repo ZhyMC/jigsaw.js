@@ -17,7 +17,7 @@ class responsemanager{
 	}
 	
 	setResponsed(id,data,pending){
-		if(this.responsed.length>1000){
+		if(this.responsed.length>100){
 			let sft=this.responsed.shift();
 			delete this.map[sft];
 		}
