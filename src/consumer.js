@@ -128,9 +128,8 @@ class consumer{
 		if(arr.length<=0)return false;
 
 		let index=Math.floor(Math.random()*arr.length);
-		let chosen=arr[index]
+		let chosen=arr[index];
 
--
 		if(!chosen || chosen == null)return false;
 		if(chosen.addr.indexOf(":")==-1)return false;
 
