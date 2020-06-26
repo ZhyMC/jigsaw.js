@@ -28,7 +28,7 @@ class slicebuilder{
 	
 	}
 	setPartData(id,partid,partmax,data){
-		if(this.buildings.length>100){
+		if(this.buildings.length>1000){
 			let sft=this.buildings.shift();
 			delete this.map[sft];
 		}		
