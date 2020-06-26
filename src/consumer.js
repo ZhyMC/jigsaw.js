@@ -5,7 +5,9 @@ var logger=require(__dirname+"/logger.js");
 var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
 var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
+
 var Q=require("q");
+
 
 class consumer{
 	constructor(name,jgenv,sock,domclient,options){
@@ -14,6 +16,7 @@ class consumer{
 		this.jgenv=jgenv;
 
 		this.requests={};	
+		this.request_busy=0;
 
 		this.ready=false;
 
@@ -24,8 +27,31 @@ class consumer{
 
 		this.sock=sock;
 
+		this.restime_meter={
+			samples:[],
+			maxsamples:100,
+			avg:0
+		}
+
+
 		//this.init();
 	}
+	_addResTimeSample(v){
+		this.restime_meter.samples.push(v);
+
+		if(this.restime_meter.samples.length>this.restime_meter.maxsamples)
+			this.restime_meter.samples.shift();
+	}
+	getResTime(){
+		if(this.restime_meter.samples.length<=0)return 1000;
+		let sum=0;
+		for(let v of this.restime_meter.samples)
+			sum+=v;
+
+
+		return sum/this.restime_meter.samples.length;
+	}
+
 	async init(){
 		await this.initSenderSocket();
 
@@ -100,7 +126,7 @@ class consumer{
 	}
 	sendRequest(req,ip,po){
 		return this.doResend(req.reqid,req.tagdatas,ip,po,{
-			resend:50,
+			resend:100,
 			timeout:10000
 		});
 	}
@@ -138,30 +164,45 @@ class consumer{
 
 	async doResend(reqid,tagdatas,ip,po,options){
 		//监测回复包并重发,如果规定的时间条件内还是没有回复包，会抛出异常，否则返回回复包
-		//
+		
+
+		let timer=new Date().getTime();
+
 		let defer=Q.defer();
 		this.requests[reqid]={data_defer:defer};
 	
+		this.request_busy++;
 
 		let sock=this.sock;
 
-		for(let tagdata of tagdatas)
-			sock.send("producer",tagdata,po,ip);
+//		for(let tagdata of tagdatas)
+//			sock.send("producer",tagdata,po,ip);
+
+
+		
 
 		let isTimeout=false;
+		let endFlag=false;
 		let {resend,timeout}=options;
 		let ret=null;
 
 
-		let queue=0;
-
 		setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
 
-		let resender=setInterval(()=>{
+		let resender=()=>{
 			for(let tagdata of tagdatas)
-				sock.send("producer",tagdata,po,ip);
-		},resend);
+					sock.send("producer",tagdata,po,ip);
+
+
+			let resendtime=Math.max(10,this.request_busy/10);
+
+			if(!endFlag)
+				setTimeout(resender,Math.floor(resendtime));
+		}
+
+			
+		resender();
 
 		try{
 			ret=JSON.parse((await defer.promise)+"");
@@ -170,12 +211,26 @@ class consumer{
 			isTimeout=true;
 		}
 
-		clearInterval(resender);
+		endFlag = true;
+
+//		clearInterval(resender);
+		let timecost=new Date().getTime() - timer;
 
 		delete this.requests[reqid];
+		this.request_busy--;
 	
 		this.handleException(ret);
-		if(isTimeout)throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
+		if(isTimeout)
+			throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
+		else{
+
+
+			
+
+			this._addResTimeSample(timecost);
+
+		}
+
 
 		return ret;
 	}

@@ -104,7 +104,7 @@ class producer{
 		for(let i in bufs){
 			let tagged=packet.tag(reqid,bufs[i],port,i,bufs.length);//插入数据包头部
 
-			//if(Math.random()>0.1)
+		//	if(Math.random()>0.7)
 			this.sock.send("consumer",tagged,target.port,target.address);
 			bufcount+=tagged.length;
 
