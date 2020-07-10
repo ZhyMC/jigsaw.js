@@ -5,6 +5,7 @@ var logger=require(__dirname+"/logger.js");
 var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
 var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
+var valid=require(__dirname+"/valid.js");
 
 var Q=require("q");
 
@@ -86,6 +87,8 @@ class consumer{
 		return await this._send(path,obj);
 	}
 	async _send(path,obj){
+		valid.sendData.checkValid(obj);
+		
 		await this._ready();
 
 		if(typeof(obj)!="object")
