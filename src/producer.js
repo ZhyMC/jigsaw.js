@@ -70,19 +70,25 @@ class producer{
 		let decoded=packet.untag(msg);
 
 		let id=decoded.id;
+		let from=decoded.from;
+		let token=decoded.from+decoded.id
 
-		let full=this.slicebuilder.setPartData(id,decoded.partid,decoded.partmax,decoded.partdata);
+
+		let full=this.slicebuilder.setPartData(from,id,decoded.partid,decoded.partmax,decoded.partdata);
+		
 		if(!full)return;
 
 		let path=decoded.port;
 
+
 		try{		
 
-			let rsp=await this._handlePacket(id,path,JSON.parse(full+""),rinfo);
+
+			let rsp=await this._handlePacket(token,path,JSON.parse(full+""),rinfo);
 
 //console.log(rsp);
 
-			this.sendPacket(id,rsp,"reply",rinfo);
+			this.sendPacket(id,rsp,"reply",from,rinfo);
 	
 		}catch(e){
 		//	console.log(e);
@@ -95,14 +101,16 @@ class producer{
 				this.sendRawData(rawdata,target);
 			},parseInt(this.options.sim.delay*(1+0.1*Math.random())));
 	}*/
-	async sendPacket(reqid,data,port,target){
+	async sendPacket(reqid,data,port,from,target){
 		let rawdata=Buffer.from(JSON.stringify(data));
 
 		let bufs=packet.sliceBuffer(rawdata);
 
 		let bufcount=0;
 		for(let i in bufs){
-			let tagged=packet.tag(reqid,bufs[i],port,i,bufs.length);//插入数据包头部
+
+			let tagged=packet.tag(reqid,bufs[i],port,from,i,bufs.length);//插入数据包头部
+
 
 		//	if(Math.random()>0.7)
 			this.sock.send("consumer",tagged,target.port,target.address);
@@ -120,14 +128,14 @@ class producer{
 	rinfoToRname(rinfo){
 		return `[${rinfo.address}:${rinfo.port}]`
 	}
-	async _handlePacket(id,path,data,rinfo){
+	async _handlePacket(token,path,data,rinfo){
 		
 
 		let parsedpath=packet.parsePath(path);
 		let rsp=null;
 
 
-		let has=this.responsemanager.hasResponsed(id);
+		let has=this.responsemanager.hasResponsed(token);
 
 
 		if(has){
@@ -136,7 +144,7 @@ class producer{
 			rsp=has.data;
 
 		}else{
-			this.responsemanager.setResponsed(id,null,true);
+			this.responsemanager.setResponsed(token,null,true);
 
 //	console.log(path,data,this.ports[path])
 
@@ -152,7 +160,7 @@ class producer{
 				rsp={_jigsaw:this.name,_error:e,_errorname:e.message,_stack:e.stack};
 			}
 			
-			this.responsemanager.setResponsed(id,rsp,false);
+			this.responsemanager.setResponsed(token,rsp,false);
 		}
 
 		if(rsp==undefined)rsp=null;

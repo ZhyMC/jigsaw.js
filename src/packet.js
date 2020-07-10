@@ -7,11 +7,12 @@ module.exports={
 			}
 			return parts;
 		},
-        tag(id,data,port,partid,partmax){
-                let pd=Buffer.from(port);
+        tag(id,data,path,from,partid,partmax){
+                let pd=Buffer.from(path);
+                let fr=Buffer.from(from);
 
                 let offset=0;
-                let built=Buffer.alloc(4+2+pd.length+2+2+data.length);
+                let built=Buffer.alloc(4+2+pd.length+2+fr.length+2+2+data.length);
 
 
                 built.writeUInt32BE(id,0);offset+=4;
@@ -19,6 +20,9 @@ module.exports={
 
                 built.writeUInt16BE(pd.length,offset);offset+=2;
                 pd.copy(built,offset);offset+=pd.length;
+
+                built.writeUInt16BE(fr.length,offset);offset+=2;
+                fr.copy(built,offset);offset+=fr.length;
 
                 built.writeUInt16BE(partid,offset);offset+=2;
                 built.writeUInt16BE(partmax,offset);offset+=2;
@@ -32,16 +36,20 @@ module.exports={
                 let offset=0;
                 let id=data.readUInt32BE(0);offset+=4;
 
-
                 let ptlen=data.readUInt16BE(offset);offset+=2;
                 let pt=data.slice(offset,offset+ptlen)+"";offset+=ptlen;
+
+                let fromlen=data.readUInt16BE(offset);offset+=2;
+                let from=data.slice(offset,offset+fromlen)+"";offset+=fromlen;
+
 
                 let partid=data.readUInt16BE(offset);offset+=2;
                 let partmax=data.readUInt16BE(offset);offset+=2;
                                
                 let partdata=data.slice(offset);
 
-                return {id,partdata,port:pt,partid,partmax};
+
+                return {id,partdata,port:pt,from,partid,partmax};
         },
     	parsePath(po){
             	let loc=po.lastIndexOf(":");
@@ -53,6 +61,7 @@ module.exports={
         decodePacket(encoded){
              let {id,partdata,port,partid,partmax}=this.untag(encoded);
              let parsedpath=this.parsePath(port);
+
 
             return {id,path:port,parsedpath,data};
         }

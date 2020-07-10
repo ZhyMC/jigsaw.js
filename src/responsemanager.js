@@ -7,28 +7,29 @@ class responsemanager{
 	getSize(){
 		return this.responsed.length;
 	}
-	hasResponsed(id){
+	hasResponsed(token){
 
-		if(this.map[id])
-			return this.map[id];
+		if(this.map[token])
+			return this.map[token];
 		else
 			return false;
 
 	}
 	
-	setResponsed(id,data,pending){
+	setResponsed(token,data,pending){
+
 		if(this.responsed.length>1000){
 			let sft=this.responsed.shift();
 			delete this.map[sft];
 		}
 	
-		if(!this.map[id]){
-			this.map[id]={pending,data};
+		if(!this.map[token]){
+			this.map[token]={pending,data};
 
-			this.responsed.push(id);
+			this.responsed.push(token);
 		}else{
-			this.map[id].data=data;
-			this.map[id].pending=pending;
+			this.map[token].data=data;
+			this.map[token].pending=pending;
 		}
 
 

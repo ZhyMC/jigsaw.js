@@ -6,6 +6,7 @@ var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
 var waitfor=require(__dirname+"/utils/waitfor.js");
 var slicebuilder=require(__dirname+"/slicebuilder.js");
 var valid=require(__dirname+"/valid.js");
+var md5=(x)=>require("crypto").createHash("md5").update(x+"").digest("hex");
 
 var Q=require("q");
 
@@ -21,12 +22,15 @@ class consumer{
 
 		this.ready=false;
 
+		this.curr_reqid=100;
 
 		this.domclient=domclient;
 
 		this.slicebuilder=new slicebuilder();
 
 		this.sock=sock;
+
+		this.uniqueid=this._uniqueid();
 
 		this.restime_meter={
 			samples:[],
@@ -36,6 +40,17 @@ class consumer{
 
 
 		//this.init();
+	}
+	_uniqueid(){//每次生成实例,都会得到一个唯一id
+		let token="";
+		token+=this.name;
+		token+="-";
+		token+=new Date().getTime()+"";
+		token+="-";
+		token+=Math.random()+"";
+		token+="jigsaw";
+
+		return md5(token).substr(0,10);
 	}
 	_addResTimeSample(v){
 		this.restime_meter.samples.push(v);
@@ -69,11 +84,10 @@ class consumer{
 	}
 
 	randomReqId(){
-            let id=1;
-            do{
-                    id=parseInt(1e8+Math.random()*1e9);
-            }while(this.requests[id]);
-            return id;
+		let id=this.curr_reqid++;
+		if(id>1e10)
+			throw new Error("id too big")
+		return id;
 	}
 	parseRname(rname){//如果jigsaw是Rname格式[XXXX]，则直接发送至该Rname代表的ip和端口
 		if(rname.substr(0,1)=="[" && rname.substr(-1,1)=="]")
@@ -143,7 +157,8 @@ class consumer{
 
 		let path=jgname+":"+jgport;
 		for(let i in bufs){
-			let tagged=packet.tag(reqid,bufs[i],path,i,bufs.length);//插入数据包头部
+
+			let tagged=packet.tag(reqid,bufs[i],path,this.uniqueid,i,bufs.length);//插入数据包头部
 
 			tagdatas.push(tagged);
 		}
@@ -194,9 +209,11 @@ class consumer{
 
 
 		let resender=()=>{
-			for(let tagdata of tagdatas)
-					sock.send("producer",tagdata,po,ip);
 
+			for(let tagdata of tagdatas){
+				//console.log(packet.untag(tagdata))
+					sock.send("producer",tagdata,po,ip);
+			}
 
 			let resendtime=Math.max(10,this.request_busy/10);
 
@@ -253,10 +270,20 @@ class consumer{
 	}
 	async _handleReply(msg,rinfo){
 
-		let {id,partdata,partid,partmax,port}=packet.untag(msg);
-//console.log(partid,partmax)
 
-		let full=this.slicebuilder.setPartData(id,partid,partmax,partdata);
+		let {id,partdata,partid,partmax,port,from}=packet.untag(msg);
+		//console.log(packet.untag(msg));
+//console.log(partid,partmax)
+//
+
+
+//console.log(decoded)
+		if(from!=this.uniqueid){
+			//throw new Error("request reply owner is not correct");
+			return;
+		}
+
+		let full=this.slicebuilder.setPartData(from,id,partid,partmax,partdata);
 		if(!full)return;
 		if(!this.requests[id])return;
 

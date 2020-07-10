@@ -28,6 +28,8 @@ console.time("cost");
 			if(!ret)console.log(randomid,"1")
 			if(ret.randomid==randomid)
 				accepted++;
+			else
+				console.log(ret.randomid,randomid)
 			return ret;
 		})();
 

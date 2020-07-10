@@ -4,44 +4,59 @@ class slicebuilder{
 		this.map={};
 
 	}
-	hasBuilding(id){
+	hasBuilding(token){
 
-		if(this.map[id])
-			return this.map[id];
+		if(this.map[token])
+			return this.map[token];
 		else
 			return false;
 
 	}
-	getFullData(id){
-		let isfull=Object.keys(this.map[id].parts).length==this.map[id].partmax;
+	removeBuilding(token){
+		let loc=this.buildings.indexOf(token);
+		this.buildings.splice(loc,1);
+		delete this.map[token];
+	}
+	getFullData(token){
+		let isfull=Object.keys(this.map[token].parts).length==this.map[token].partmax;
 		let result=[];
 		if(isfull)
 		{	
-			for(let i=0;i<this.map[id].partmax;i++){
-				result[i]=this.map[id].parts[i];
+			for(let i=0;i<this.map[token].partmax;i++){
+				result[i]=this.map[token].parts[i];
 			}
-			this.map[id].fulldata=Buffer.concat(result);
-			return this.map[id].fulldata;
+			this.map[token].fulldata=Buffer.concat(result);
+			let ret=this.map[token].fulldata;
+
+			this.removeBuilding(token);
+
+			return ret;
 		}
 
 		return false;
 	
 	}
-	setPartData(id,partid,partmax,data){
+	setPartData(from,id,partid,partmax,data){
+		let token=from+id;
+
+
 		if(this.buildings.length>1000){
 			let sft=this.buildings.shift();
 			delete this.map[sft];
 		}		
-		if(!this.map[id]){
-			this.map[id]={id,partmax,parts:{}};
+		if(!this.map[token]){
+			this.map[token]={partmax,parts:{}};
 
-			this.buildings.push(id);
+			this.buildings.push(token);
 		}
 
-		this.map[id].parts[partid]=data;
-		this.map[id].partmax=partmax;
+		if(this.map[token].parts[partid])
+			throw new Error("multi time set part data")
 
-		return this.getFullData(id);
+		this.map[token].parts[partid]=data;
+		this.map[token].partmax=partmax;
+
+		return this.getFullData(token);
 	}
 }
 
