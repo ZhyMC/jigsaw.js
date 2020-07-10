@@ -87,9 +87,9 @@ class consumer{
 		return await this._send(path,obj);
 	}
 	async _send(path,obj){
-		valid.sendData.checkValid(obj);
-		
 		await this._ready();
+
+		await valid.sendData.checkValid(obj);
 
 		if(typeof(obj)!="object")
 			obj={};
