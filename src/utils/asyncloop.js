@@ -8,7 +8,7 @@ class asyncloop{
 		this.timelen=timelen;
 		this.timeunit=timeunit;
 		this.endCondi=endCondi;
-		this.callback=()=>{};
+		this.callback=callback;
 
 	}
 	start(){
