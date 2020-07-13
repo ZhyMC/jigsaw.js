@@ -19,7 +19,7 @@ class jigsawHoleDigger{
 
 		this.dead=false;
 
-		this.maintainer=new asyncloop(60000,1000,()=>this.dead,this.updateHoles.bind(this));
+		this.maintainer=new asyncloop(30000,1000,()=>this.dead,this.updateHoles.bind(this));
 
 		this.maintainer.start();
 	}
