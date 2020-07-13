@@ -45,6 +45,8 @@ console.timeEnd("cost");
 
 	console.log(`finished, accepted ${accepted} of ${total}`);
 
+	if(accepted!=total)
+		throw new Error("some reply are incorrect");
 
 }
 

@@ -50,8 +50,8 @@ class slicebuilder{
 			this.buildings.push(token);
 		}
 
-		if(this.map[token].parts[partid])
-			throw new Error("multi time set part data")
+//		if(this.map[token].parts[partid])
+//			throw new Error("multi time set part data")
 
 		this.map[token].parts[partid]=data;
 		this.map[token].partmax=partmax;
