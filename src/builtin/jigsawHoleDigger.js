@@ -52,7 +52,12 @@ class jigsawHoleDigger{
 	}
 	async updateHoles(){
 		for(let h in this.holes_mantained){
-			await this.jigsaw.send(`${h}:#DIGHOLE#`,{jgname:this.jigsaw.name});
+			try{
+				await this.jigsaw.send(`${h}:#DIGHOLE#`,{jgname:this.jigsaw.name});
+			}catch(e){
+				console.error("[HoleDigger]",`[${this.jigsaw.name}]`,`打洞 -> ${h} 失败,即将重试...`),
+			}
+
 		}
 	}
 
