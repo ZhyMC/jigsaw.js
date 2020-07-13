@@ -21,7 +21,11 @@ class asyncloop{
 			await sleep(this.timeunit);
 			timecount+=this.timeunit;
 			if(timecount>this.timelen){
-				await this.callback();
+				try{
+					await this.callback();
+				}catch(e){
+					console.error("Error occurred at asyncloop",e);
+				}
 
 				timecount=0;
 			}
