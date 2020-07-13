@@ -1,7 +1,6 @@
 var http = require("http");
 var url = require("url");
 var qs = require("querystring");
-var fetch = require("node-fetch");
 var sleep = (t) =>new Promise((y) =>setTimeout(y, t));
 
 var consumer = require(__dirname+"/miniJigsaw/consumer.js");
