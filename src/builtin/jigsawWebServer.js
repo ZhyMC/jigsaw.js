@@ -11,7 +11,9 @@ var URL = require("url");
 var querystring = require("querystring");
 var Busboy = require("busboy");
 var cluster = require("cluster");
-
+var q = require("q");
+var ContentType=require("content-type");
+var assert = require("assert")
 
 var JGO = jigsawenv.unserialize(process.argv[2]);
 var PORT = process.argv[3];
@@ -31,92 +33,128 @@ var CERT = JSON.parse(process.argv[4]);
 
 
 			this.jgindex=0;
-			
+
+
 			if (cert && cert.cert && cert.key) {
-				https.createServer(cert, (req, res) => {
-					return this.handle(req, res)
-				}).listen(port);
+				https.createServer(cert,this.handleConnection.bind(this)).listen(port);
 				this.isHttps = true;
 			} else
-				http.createServer((req, res) => {
-					return this.handle(req, res)
-				}).listen(port);
+				http.createServer(this.handleConnection.bind(this)).listen(port);
 
-//			this.url = (this.isHttps ? "https://" : "http://") + IP + ":" + port + "/";
 
 		}
-
-		handleRequest(route,data,res,isBrowser){
-		
-			this.jg.send(route,data).then((d) => {
-				let isObject=d instanceof Object;
-
-				if(isBrowser)
-					res.end(isObject ? JSON.stringify(d,null,'\t') : d)
-				else
-					res.end(isObject ? JSON.stringify(d) : d)
-
-			}).catch((err)=>{
-				//console.log(err);
-				res.end(err.stack);
-			});
+		isBrowser(req){
+			return req.headers['user-agent'] && req.headers['user-agent'].indexOf("Mozilla")!=-1;
 		}
-		handle(req, res) {
-		
+		async handleConnection(req,res){
+			let isBrowser=this.isBrowser(req);
+
+    		res.setHeader("Access-Control-Allow-Origin", "*");
 			res.setTimeout(10000);
 			
+			try{
+				let ret=await this.handle(req);
+				let render_str="";
+
+				if(isBrowser)
+					render_str=JSON.stringify(ret,null,'\t');
+				else
+					render_str=JSON.stringify(ret);
+
+				res.setHeader("Content-Type", "application/json; charset=utf-8");
+				res.end(render_str);
+			}catch(e){
+				res.setHeader("Content-Type", "text/plain; charset=utf-8");
+				res.end(e.stack);
+			}
+
+		}
+
+		async handlePostRequest(route,req){
+			let str_contentType=req.headers["content-type"];
+			assert(typeof(str_contentType)=="string","Content-Type must be a string");
+
+			let contentType=ContentType.parse(str_contentType);
+			let data={};
+
+			if(contentType.type=="application/json"){
+				let defer = q.defer();
+				let bufs=[];
+
+				req.on("data",(dt)=>{
+					bufs.push(dt);
+				})
+				req.on("end",()=>{
+					defer.resolve(Buffer.concat(bufs).toString())
+				})
+
+				let str = await defer.promise;
+				try{
+					data = JSON.parse(str);
+				}catch(e){
+					throw new Error("post body payload must be a JSON format");
+				}
+
+			}else{
+				let busboy = new Busboy({headers:req.headers});
+
+				let defer=q.defer();
+			
+				busboy.on("field",(name,val)=>{
+					data[name]=val;
+				})
+
+				busboy.on("finish",()=>{
+					defer.resolve(data);
+				});
+
+
+				req.pipe(busboy);
+
+				data = await defer.promise;
+			}
+
+		
+
+        	return this.jg.send(route,data);
+		}
+		handleGetRequest(route,req){
+			let urlobj = URL.parse(req.url);
+
+			let data = querystring.parse(urlobj.query);
+        	
+        	return this.jg.send(route,data);
+
+		}
+		async handle(req) {
+
 			
 			if (req.url == "/") {
-				res.end(JSON.stringify({
-						error: false,
+				return {
 						msg: "Jigsaw worked!"
-					}));
-				return;
+					};
 			}
 
 			
-            let obj = URL.parse(req.url);
-            let routeRaw = obj.pathname.split("/");
-            routeRaw = routeRaw.slice(1, routeRaw.length);
-            if (routeRaw.length != 2) {
-                    res.end(JSON.stringify({
-                                    error: true,
-                                    msg: "Invalid Request"
-                            }));
-                    return;
+            let urlobj = URL.parse(req.url);
+
+            let urlparts = urlobj.pathname.split("/");
+            let routeRaw = urlparts.slice(1, urlparts.length);
+
+            if (routeRaw.length != 2 || !urlparts[2]) {
+				throw new Error("Not a completed request.")
             }
-        let route = routeRaw.join(':');
-		let isBrowser = req.headers['user-agent'] && req.headers['user-agent'].indexOf("Mozilla")!=-1;
-	
 
-    	res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Content-Type", "application/json;charset=utf-8");
+	        let route = routeRaw.join(':');
 
 
-		if(req.method=="POST"){
-			let busboy = new Busboy({headers:req.headers});
-
-
-
-			let obj={};
-			busboy.on("field",(name,val)=>{
-				obj[name]=val;
-			})
-
-			busboy.on("finish",()=>{
-
-				this.handleRequest(route,obj,res,isBrowser);
-
-			});
-
-			req.pipe(busboy);
-			
-		}else if(req.method=="GET"){
-			
-			let data = querystring.parse(obj.query);
-        
-            this.handleRequest(route,data,res,isBrowser);
-		}
+			if(req.method=="POST"){
+				return await this.handlePostRequest(route,req);
+			}else if(req.method=="GET"){
+	            return await this.handleGetRequest(route,req);
+			}else{
+				throw new Error("Unknown Request Method");
+			}
 		
 		}
 
