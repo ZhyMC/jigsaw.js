@@ -28,6 +28,9 @@ class domainclient extends EventEmitter{
         this.logger=new DefaultLogger();
         this.freq = 20 * 1000;//20秒向服务器报告一次网络位置
     }
+    setLogger(logger){
+        this.logger=logger;
+    }
     setClientInfo(clientinfo){
         this.clientinfo=clientinfo;
     }

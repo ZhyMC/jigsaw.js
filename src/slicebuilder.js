@@ -40,7 +40,7 @@ class slicebuilder{
 		let token=from+id;
 
 
-		if(this.buildings.length>1000){
+		if(this.buildings.length>=1000){
 			let sft=this.buildings.shift();
 			delete this.map[sft];
 		}		

@@ -14,7 +14,7 @@ let domserver,jg,jg2;
 
 
 describe("传输测试",function(){
-	this.timeout(20000);
+	this.timeout(40000);
 	before(function(){
 		domserver=domainserver();
 
@@ -146,6 +146,84 @@ describe("传输测试",function(){
 		}).catch(done);
 	});
 
+	it("丢包率为50%的情况下,同时发送500个包能正常接收",function(done){
+		jg2.port("get",(obj)=>{
+			return obj;
+		});
+
+		jg2.producer.drop_faker={
+			enable:true,
+			drop_rate:0.5
+		}
+
+		let id=Math.random();
+		let hasdone=false;
+		let succ=0;
+		let count=500;
+		for(let i=0;i<count;i++){
+			jg.send("recver:get",{data:id}).then((o)=>{
+				if(o.data==id)
+					succ++;
+				else
+					throw new Error("not a valid response")
+				if(succ==count){
+					hasdone=true;
+					done();
+				}
+			}).catch((e)=>{
+				if(hasdone)return;
+				hasdone=true;
+				done(e);
+
+			})
+
+		}
+
+
+	})
+	it("在较差的网络环境,大量的发送之后,jigsaw仍然可以正常关闭",function(done){
+
+		let before=0;
+		let buf=Buffer.allocUnsafe(10*1024).toString("base64");
+		jg2.producer.drop_faker={
+			enable:true,
+			drop_rate:0.5
+		}
+
+		jg2.port("getvalue",(obj)=>{
+			return obj;
+		});
+		let p=(async()=>{
+			for(let j=0;j<10;j++){
+				if(j==2){
+					 before=process.memoryUsage().external;
+				}
+				let ps=[];
+				for(let i=0;i<100;i++){
+					ps.push(jg.send("recver:getvalue",{abc:buf}));
+				}
+				//console.log(await Promise.all(ps));
+				await Promise.all(ps);
+			}
+		await jg2.close();
+		await jg.close();
+		await sleep(1000);
+		})();
+
+		p.then(()=>{
+
+			let after=process.memoryUsage().external;
+
+			if((after-before)/1024/1024>0.5)
+				done(new Error("可能内存泄露"));
+			else
+				done();
+		}).catch(done);
+
+
+	});
+
+	
 
 
 

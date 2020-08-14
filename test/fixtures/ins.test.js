@@ -71,10 +71,13 @@ describe("实例测试",function(){
 			done();
 		}) 	//这里10秒后会抛出超时异常,因为远程的jigsaw早已被关闭
 
-
-
 	});
+	it("启动后马上关闭,不会发生错误",async function(){
+		let j=new jigsaw();
+		j.getLogger().setLevel("NONE");
+		await j.close();
 
+	})
 
 
 });

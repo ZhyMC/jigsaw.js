@@ -38,7 +38,8 @@ class jigsaw extends EventEmitter{
 		this.consumer.on("close",()=>this._onSubModuleClose("consumer"));
 		
 
-		this.logger=new DefaultLogger();
+		this.setLogger(new DefaultLogger());
+
 		this.start();
 	}
 	_resetReadyList(){
@@ -85,7 +86,12 @@ class jigsaw extends EventEmitter{
 		this.state="ready";
 		this.emit("ready");
 	}
-
+	setLogger(logger){
+		this.logger=logger;
+		this.producer.setLogger(logger);
+		this.consumer.setLogger(logger);
+		
+	}
 	getLogger(){
 		return this.logger;
 	}
@@ -97,9 +103,19 @@ class jigsaw extends EventEmitter{
 		if(this.state=="close" || this.state=="closing")return;
 		//assert(this.state!="close",`in this state '${this.state}' can not be closed`);
 		//assert(this.state!="closing","jigsaw is closing");
+		if(this.state=="starting"){
+			await new Promise((resolve,reject)=>{
+				let timeout=setTimeout(reject,5000);
+				let eventListener=()=>{
+					clearTimeout(timeout);
+					resolve();
+				};
+				this.once("ready",eventListener);
+			})
 
+		}
+		
 		this.state="closing";
-
 
 
 		await this._unloadPlugins();
@@ -108,10 +124,8 @@ class jigsaw extends EventEmitter{
 		await this.consumer.close();
 		await this.producer.close();
 		
-
-		this.sock.close();
-		this.domclient.close();
-
+		await this.domclient.close();
+		await this.sock.close();
 
 		this.state="close";
 		this.emit("close");
@@ -133,6 +147,8 @@ class jigsaw extends EventEmitter{
 	}
 	async start(){
 		assert(this.state=="close","in this state,jigsaw can not be started");
+
+		this.state="starting";
 
 		this._resetReadyList();
 
@@ -156,9 +172,6 @@ class jigsaw extends EventEmitter{
 	}
 	handle(){
 		return this.producer.handle.apply(this.producer,arguments);
-	}
-	_send(){
-		return this.consumer._send.apply(this.consumer,arguments);
 	}
 	send(){
 		return this.consumer.send.apply(this.consumer,arguments);

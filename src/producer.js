@@ -2,7 +2,6 @@ const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
 const domainclient=require("./domain/domainclient.js");
 const packet=require("./packet.js");
 const getdgramconn=require("./utils/getdgramconn.js");
-const waitfor=require("./utils/waitfor.js");
 const responsemanager=require("./responsemanager.js");
 const slicebuilder=require("./slicebuilder.js");
 const EventEmitter=require("events").EventEmitter;
@@ -31,6 +30,15 @@ class producer extends EventEmitter{
 
 		this.state="close";
 
+		this.drop_faker={
+			enable:false,
+			drop_rate:0
+		}
+
+	}
+	setLogger(logger){
+		this.logger=logger;
+		this.domclient.setLogger(logger);
 	}
 	async start(){
 		if(this.state!="close")
@@ -97,9 +105,7 @@ class producer extends EventEmitter{
 
 			let rsp=await this._handlePacket(token,path,JSON.parse(full+""),rinfo);
 
-//console.log(rsp);
-
-			this.sendPacket(id,rsp,"reply",from,rinfo);
+			await this.sendPacket(id,rsp,"reply",from,rinfo);
 	
 		}catch(e){
 		//	console.log(e);
@@ -113,6 +119,10 @@ class producer extends EventEmitter{
 			},parseInt(this.options.sim.delay*(1+0.1*Math.random())));
 	}*/
 	async sendPacket(reqid,data,port,from,target){
+		
+		if(this.state!="ready")
+			throw new Error("in this state,can not sendPacket");
+
 		let rawdata=Buffer.from(JSON.stringify(data));
 
 		let bufs=packet.sliceBuffer(rawdata);
@@ -123,8 +133,13 @@ class producer extends EventEmitter{
 			let tagged=packet.tag(reqid,bufs[i],port,from,i,bufs.length);//插入数据包头部
 
 
-		//	if(Math.random()>0.7)
+			if(!this.drop_faker.enable || 
+				(this.drop_faker.enable && Math.random() > this.drop_faker.drop_rate)
+			  )
+
 			this.sock.send("consumer",tagged,target.port,target.address);
+
+
 			bufcount+=tagged.length;
 
 			if(bufcount>12*1024)//10KB

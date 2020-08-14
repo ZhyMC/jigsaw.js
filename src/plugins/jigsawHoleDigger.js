@@ -28,7 +28,7 @@ class jigsawHoleDigger{
 			this.holes_recv[data.jgname]=rinfo.rname;
 		});
 		this.jigsaw.dighole=this.dighole.bind(this);
-		this.jigsaw.send=this.hooked_send.bind(this);
+		this.jigsaw.consumer.onBeforeSend(this.hooked_send.bind(this));
 	}
 	async hooked_send(path,data){
 //		if(this.holes_recv[path])
@@ -40,7 +40,9 @@ class jigsawHoleDigger{
 
 		let newpath=buildPath({jgname,method});
 
-		return await this.jigsaw._send(newpath,data);
+	//	return await this.jigsaw._send(newpath,data);
+	//	
+		return {path:newpath,obj:data};
 	}
 	async dighole(target){
 		this.holes_mantained[target]=true;

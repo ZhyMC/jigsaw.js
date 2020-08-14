@@ -19,22 +19,20 @@ class consumer extends EventEmitter{
 		this.jgenv=jgenv;
 
 		this.requests={};	
-
 		this.curr_reqid=100;
-
 		this.domclient=domclient;
-
 		this.slicebuilder=new slicebuilder();
 
 		this.sock=sock;
-
 		this.uniqueid=this._uniqueid();
+
 
 		this.state="close";
 
 		this.closing_defer;
 
-
+		this._beforeSend=(path,obj)=>(path,obj);
+		this._afterSend=(res)=>(res);
 
 		//this.init();
 	}
@@ -50,7 +48,9 @@ class consumer extends EventEmitter{
 		return md5(token).substr(0,10);
 	}
 
-
+	setLogger(logger){
+		this.logger=logger;
+	}
 
 	async start(){
 		assert(this.state=="close","in this state, consumer can not be started.");
@@ -74,7 +74,9 @@ class consumer extends EventEmitter{
 		this.state="closing";
 		this._checkClosed();
 
+		debug("开始关闭jigsaw实例",this.name);
 		await this.closing_defer;
+		debug("成功关闭jigsaw实例",this.requests,this.name);
 
 		this.state="close";
 	}
@@ -106,10 +108,20 @@ class consumer extends EventEmitter{
 		}else return false;
 
 	}
-	async send(path,obj){
-		return await this._send(path,obj);
+	onBeforeSend(f){
+		this._beforeSend=f;
 	}
-	async _send(path,obj){
+	onAfterSend(f){
+		this._afterSend=f;
+	}
+	async send(_path,_obj){
+		let {path,obj} = await this._beforeSend(_path,_obj);
+		let res = await this._call(path,obj);
+		let result = await this._afterSend(res,_path,_obj,path,obj);
+		return result;
+	}
+
+	async _call(path,obj){
 		
 		assert(this.state=="ready","can not do remote call,because consumer has not ready");
 
@@ -136,8 +148,7 @@ class consumer extends EventEmitter{
 
 			if(!chosen){
 				debug("未找到目标jigsaw的网络位置",path);
-				return null;
-
+				throw new Error("no route to access the jigsaw.");
 			}
 			let split=chosen.addr.split(":");
 			
@@ -150,11 +161,11 @@ class consumer extends EventEmitter{
 
 		let req=this.buildRequest(obj,target_jgname,jgpo.port);
 
-		return this.sendRequest(req,ip,po);
+		return this._sendRequest(req,ip,po);
 
 	}
-	sendRequest(req,ip,po){
-		return this.doResend(req.reqid,req.tagdatas,ip,po,{
+	_sendRequest(req,ip,po){
+		return this._doResend(req.reqid,req.tagdatas,ip,po,{
 			resend:100,
 			timeout:10000
 		});
@@ -197,7 +208,7 @@ class consumer extends EventEmitter{
 		return chosen;
 	}
 
-	async doResend(reqid,tagdatas,ip,po,options){
+	async _doResend(reqid,tagdatas,ip,po,options){
 		//监测回复包并重发,如果规定的时间条件内还是没有回复包，会抛出异常，否则返回回复包
 		
 
@@ -207,12 +218,8 @@ class consumer extends EventEmitter{
 
 		this._setRequest(reqid,{data_defer:defer});
 
-//		this.requests[reqid]={data_defer:defer};
 	
 		let sock=this.sock;
-
-//		for(let tagdata of tagdatas)
-//			sock.send("producer",tagdata,po,ip);
 
 		
 
@@ -223,14 +230,16 @@ class consumer extends EventEmitter{
 
 		let timeout_timer=setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
-		let resender=setInterval(()=>{
+		let send_once=()=>{
 			for(let tagdata of tagdatas){
 				//console.log(packet.untag(tagdata))
 					sock.send("producer",tagdata,po,ip);
 			}
 
+		};
 
-		},50);
+		send_once();
+		let resender=setInterval(send_once,30);
 
 
 		try{
