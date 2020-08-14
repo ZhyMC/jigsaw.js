@@ -14,7 +14,7 @@ let domserver,jg,jg2;
 
 
 describe("传输测试",function(){
-	this.timeout(5000);
+	this.timeout(20000);
 	before(function(){
 		domserver=domainserver();
 

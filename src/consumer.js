@@ -226,12 +226,11 @@ class consumer extends EventEmitter{
 		let resender=setInterval(()=>{
 			for(let tagdata of tagdatas){
 				//console.log(packet.untag(tagdata))
-				
 					sock.send("producer",tagdata,po,ip);
 			}
 
 
-		},20);
+		},50);
 
 
 		try{

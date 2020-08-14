@@ -5,7 +5,13 @@ domain();
 
 var jg=new jigsaw("test");
 
-jg.port("get",obj=>(obj));
+jg.port("get",obj=>
+	{
+
+
+		return obj;
+
+	});
 
 
 var jg2=new jigsaw();
@@ -17,6 +23,7 @@ let total=5000;
 let accepted=0;
 
 await jg2.send("test:get",{});//缓存一下网络地址
+
 console.time("cost");
 
 	var promises=[];
@@ -25,7 +32,9 @@ console.time("cost");
 		let promise=(async()=>{
 			let randomid=Math.random();
 			let ret=await jg2.send("test:get",{randomid});
+
 			if(!ret)console.log(randomid,"1")
+
 			if(ret.randomid==randomid)
 				accepted++;
 			else
@@ -50,10 +59,13 @@ console.timeEnd("cost");
 
 }
 
-(async ()=>{
-while(true)
-await startTest();
-})();
+jg2.once("ready",()=>{
+	(async ()=>{
+	while(true)
+	await startTest();
+	})();
+
+})
 
 
 

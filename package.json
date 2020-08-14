@@ -1,28 +1,4 @@
 {
-  "_from": "jigsaw.js@^4.0.1",
-  "_id": "jigsaw.js@4.0.1",
-  "_inBundle": false,
-  "_integrity": "sha512-tnyEX+nkgbHER4GMzKh39DsgPfvVSf4QQs4XHq5Jw5kOHcBgYZ4y+5lssiWOGlL5zVqXYfxu6i13aDq8A98hYw==",
-  "_location": "/jigsaw.js",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "range",
-    "registry": true,
-    "raw": "jigsaw.js@^4.0.1",
-    "name": "jigsaw.js",
-    "escapedName": "jigsaw.js",
-    "rawSpec": "^4.0.1",
-    "saveSpec": null,
-    "fetchSpec": "^4.0.1"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/jigsaw.js/-/jigsaw.js-4.0.1.tgz",
-  "_shasum": "f1250e6aef4d5caf308cd75f7d6adc570d228dc2",
-  "_spec": "jigsaw.js@^4.0.1",
-  "_where": "C:\\Users\\zhymc\\Desktop\\jgtunnel",
   "bugs": {
     "url": "https://github.com/ZhyMC/jigsaw.js/issues"
   },
@@ -34,6 +10,9 @@
     "pick-port": "^1.0.0",
     "q": "^1.5.1",
     "request": "^2.88.2"
+  },
+  "scripts":{
+    "test":"mocha --recursive"
   },
   "deprecated": false,
   "description": "Jigsaw的中文是拼图的意思，该项目最早来源于一个思考:",
@@ -55,7 +34,7 @@
     "type": "git",
     "url": "git+https://github.com/ZhyMC/jigsaw.js.git"
   },
-  "version": "4.2.0",
+  "version": "5.0.0",
   "devDependencies": {
     "chai": "^4.2.0",
     "debug": "^4.1.1",

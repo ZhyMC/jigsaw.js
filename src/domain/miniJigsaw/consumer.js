@@ -26,7 +26,7 @@ class request{
 		return new Promise((resolve,reject)=>{
 			Request.get({
 				url:this.buildUrl(),
-				timeout:1000
+				timeout:500
 			},(err,res,body)=>{
 				if(err){reject(err);return;}
 				resolve(body)
@@ -41,16 +41,13 @@ class request{
 class consumer{
 	constructor(prodaddr){
 		this.prodaddr=prodaddr;
-		this.maxretry=5;
+		this.maxretry=3;
 	}
 	async send(method,data){
 		let built = new request(this.prodaddr,method,data);
 		for(let i=0;i<this.maxretry;i++){
 			try{
-
 				let r=JSON.parse(await built.req());
-				if(r.length<=0)
-					throw new Error("recv an empty result");
 				return r;
 			}catch(e){
 				debug(`第${+i+1}次尝试请求失败`,method,data)

@@ -98,12 +98,24 @@ class domainclient extends EventEmitter{
         }
 
         debug(`尝试获取 ${jgname} 的网络地址`);
-        let ad=await this._send("getinfo",{jgname});
+        let ad=[];
         //`向域名服务器获取[${jgname}]的地址花费过长时间`
 
-        debug(`获取到的结果`,ad,jgname);
-        if(ad.length <= 0)
+        for(let c=0;c<6;c++){
+            ad=await this._send("getinfo",{jgname});
+            if(ad.length>0)
+                break;
+            else{
+                debug(`第${+c+1}次尝试获取到的结果为空`);
+                await sleep(500);
+            }
+        }
+        
+
+        if(ad.length<=0)
             throw new Error("Result of getAddress is empty.");
+
+        debug(`得到的结果`,ad);
 
          if (!this._addrcached[jgname])
             this._addrcached[jgname] = {};
