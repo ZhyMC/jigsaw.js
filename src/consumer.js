@@ -1,26 +1,24 @@
-var sleep=(t)=>new Promise((y)=>setTimeout(y,t));
-var domainclient=require(__dirname+"/domain/domainclient.js");
-var packet=require(__dirname+"/packet.js");
-var logger=require(__dirname+"/logger.js");
-var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
-var waitfor=require(__dirname+"/utils/waitfor.js");
-var slicebuilder=require(__dirname+"/slicebuilder.js");
-var valid=require(__dirname+"/valid.js");
-var md5=(x)=>require("crypto").createHash("md5").update(x+"").digest("hex");
+const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
+const domainclient=require(__dirname+"/domain/domainclient.js");
+const packet=require(__dirname+"/packet.js");
+const getdgramconn=require(__dirname+"/utils/getdgramconn.js");
+const slicebuilder=require(__dirname+"/slicebuilder.js");
+const valid=require(__dirname+"/valid.js");
+const md5=(x)=>require("crypto").createHash("md5").update(x+"").digest("hex");
 
-var Q=require("q");
+const Q=require("q");
+const assert=require("assert");
+const EventEmitter=require("events").EventEmitter;
+const debug=require("debug")("jigsaw:consumer");
 
-
-class consumer{
+class consumer extends EventEmitter{
 	constructor(name,jgenv,sock,domclient,options){
+		super();
 
 		this.name=name;
 		this.jgenv=jgenv;
 
 		this.requests={};	
-		this.request_busy=0;
-
-		this.ready=false;
 
 		this.curr_reqid=100;
 
@@ -32,11 +30,10 @@ class consumer{
 
 		this.uniqueid=this._uniqueid();
 
-		this.restime_meter={
-			samples:[],
-			maxsamples:100,
-			avg:0
-		}
+		this.state="close";
+
+		this.closing_defer;
+
 
 
 		//this.init();
@@ -52,35 +49,47 @@ class consumer{
 
 		return md5(token).substr(0,10);
 	}
-	_addResTimeSample(v){
-		this.restime_meter.samples.push(v);
-
-		if(this.restime_meter.samples.length>this.restime_meter.maxsamples)
-			this.restime_meter.samples.shift();
-	}
-	getResTime(){
-		if(this.restime_meter.samples.length<=0)return 1000;
-		let sum=0;
-		for(let v of this.restime_meter.samples)
-			sum+=v;
 
 
-		return sum/this.restime_meter.samples.length;
-	}
 
-	async init(){
-		await this.initSenderSocket();
+	async start(){
+		assert(this.state=="close","in this state, consumer can not be started.");
 
-		this.ready=true;
+		this.initSenderSocket();
+
+		this.state="ready";
+		this.emit("ready");
 	}
 	async initSenderSocket(){
 		this.sock.onmessage("consumer",(data,rinfo)=>this._handleReply(data,rinfo));
 		
-        await this.sock.ready();
 	}
+	async close(){
+		if(this.state=="close" || this.state=="closing")return;
+		
+		//assert(this.state!="close","this producer is not in a state can be close");
+		//assert(this.state!="closing","this producer is closing.");
+				
+		this.closing_defer=Q.defer();
+		this.state="closing";
+		this._checkClosed();
 
-	_ready(){
-		return waitfor(()=>this.ready);
+		await this.closing_defer;
+
+		this.state="close";
+	}
+	_setRequest(reqid,req){
+		this.requests[reqid]=req;
+	}
+	_delRequest(reqid){
+		delete this.requests[reqid];
+		this._checkClosed();
+	}
+	_checkClosed(){
+		let req_left=Object.keys(this.requests).length;
+
+		if(this.state=="closing" && req_left <= 0)//如果所有请求已经结束,那么此时可以终止producer
+			this.closing_defer.resolve();
 	}
 
 	randomReqId(){
@@ -101,7 +110,8 @@ class consumer{
 		return await this._send(path,obj);
 	}
 	async _send(path,obj){
-		await this._ready();
+		
+		assert(this.state=="ready","can not do remote call,because consumer has not ready");
 
 		await valid.sendData.checkValid(obj);
 
@@ -110,9 +120,7 @@ class consumer{
 
 		let jgpo=packet.parsePath(path);
 		let parsedrname=this.parseRname(jgpo.jg);
-		
-		await this._ready();
-
+	
 
 		let target_jgname=jgpo.jg;
 
@@ -126,7 +134,11 @@ class consumer{
 		}else{
 			let	chosen=await this.chooseJigsaw(path);
 
-			if(!chosen)return null;
+			if(!chosen){
+				debug("未找到目标jigsaw的网络位置",path);
+				return null;
+
+			}
 			let split=chosen.addr.split(":");
 			
 			ip=split[0];
@@ -167,7 +179,12 @@ class consumer{
 	async chooseJigsaw(path){//从域名服务器中多个jigsaw里取得一个发送对象
 		let jgpo=packet.parsePath(path);
 
-		let arr=await this.domclient.getAddress(jgpo.jg);
+		let arr=[];
+		try{
+			arr=await this.domclient.getAddress(jgpo.jg);
+		}catch(e){
+
+		}
 
 		if(arr.length<=0)return false;
 
@@ -187,67 +204,56 @@ class consumer{
 		let timer=new Date().getTime();
 
 		let defer=Q.defer();
-		this.requests[reqid]={data_defer:defer};
-	
-		this.request_busy++;
 
+		this._setRequest(reqid,{data_defer:defer});
+
+//		this.requests[reqid]={data_defer:defer};
+	
 		let sock=this.sock;
 
 //		for(let tagdata of tagdatas)
 //			sock.send("producer",tagdata,po,ip);
 
-
 		
 
 		let isTimeout=false;
-		let endFlag=false;
 		let {resend,timeout}=options;
 		let ret=null;
 
 
-		setTimeout(()=>defer.reject(new Error("timeout")),timeout);
+		let timeout_timer=setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
-
-		let resender=()=>{
-
+		let resender=setInterval(()=>{
 			for(let tagdata of tagdatas){
 				//console.log(packet.untag(tagdata))
+				
 					sock.send("producer",tagdata,po,ip);
 			}
 
-			let resendtime=Math.max(10,this.request_busy/10);
 
-			if(!endFlag)
-				setTimeout(resender,Math.floor(resendtime));
-		}
+		},20);
 
-			
-		resender();
 
 		try{
 			ret=JSON.parse((await defer.promise)+"");
-			
+			clearTimeout(timeout_timer);
+			clearInterval(resender);			
 		}catch(e){
+			clearInterval(resender);
 			isTimeout=true;
 		}
 
-		endFlag = true;
 
 //		clearInterval(resender);
 		let timecost=new Date().getTime() - timer;
 
-		delete this.requests[reqid];
-		this.request_busy--;
+
+		this._delRequest(reqid);
 	
 		this.handleException(ret);
 		if(isTimeout)
 			throw new Error(`[Jigsaw] Jigsaw Send Timeout at Module '${this.name}'`);
 		else{
-
-
-			
-
-			this._addResTimeSample(timecost);
 
 		}
 

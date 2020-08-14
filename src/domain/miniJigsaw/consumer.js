@@ -1,8 +1,8 @@
-var Request = require("request");
-var url = require("url");
-var qs = require("querystring");
-var sleep = (t)=>new Promise((y)=>setTimeout(y,t));
-
+const Request = require("request");
+const url = require("url");
+const qs = require("querystring");
+const sleep = (t)=>new Promise((y)=>setTimeout(y,t));
+const debug = require("debug")("jigsaw:miniJigaw:consumer");
 class request{
 	constructor(addr,method,data){
 		this.addr=addr;
@@ -26,7 +26,7 @@ class request{
 		return new Promise((resolve,reject)=>{
 			Request.get({
 				url:this.buildUrl(),
-				timeout:2000
+				timeout:1000
 			},(err,res,body)=>{
 				if(err){reject(err);return;}
 				resolve(body)
@@ -45,22 +45,22 @@ class consumer{
 	}
 	async send(method,data){
 		let built = new request(this.prodaddr,method,data);
-		let ret={};
-		let retry=0;
-		while(true){
+		for(let i=0;i<this.maxretry;i++){
 			try{
-				ret=JSON.parse(await built.req());
-				break;
+
+				let r=JSON.parse(await built.req());
+				if(r.length<=0)
+					throw new Error("recv an empty result");
+				return r;
 			}catch(e){
-
+				debug(`第${+i+1}次尝试请求失败`,method,data)
 			}
-
-			if(retry++>=this.maxretry)throw new Error("timeout");
 
 			await sleep(100);
 		}
 
-		return ret;
+		throw new Error("timeout");
+
 	}
 }
 

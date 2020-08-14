@@ -1,19 +1,20 @@
-var sleep=(t)=>new Promise((y)=>setTimeout(y,t));
-var domainclient=require(__dirname+"/domain/domainclient.js");
-var packet=require(__dirname+"/packet.js");
-var logger=require(__dirname+"/logger.js");
-var getdgramconn=require(__dirname+"/utils/getdgramconn.js");
-var waitfor=require(__dirname+"/utils/waitfor.js");
-var responsemanager=require(__dirname+"/responsemanager.js");
-var slicebuilder=require(__dirname+"/slicebuilder.js");
+const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
+const domainclient=require("./domain/domainclient.js");
+const packet=require("./packet.js");
+const getdgramconn=require("./utils/getdgramconn.js");
+const waitfor=require("./utils/waitfor.js");
+const responsemanager=require("./responsemanager.js");
+const slicebuilder=require("./slicebuilder.js");
+const EventEmitter=require("events").EventEmitter;
 
-class producer{
+class producer extends EventEmitter{
 	constructor(name,jgenv,sock,domclient,options){
+		super();
+
 		if(!options)options={};
 
 		this.ports={};
 		this.handler=()=>{}
-		this.ready=false;
 
 		this.name=name;
 		this.jgenv=jgenv;
@@ -28,25 +29,36 @@ class producer{
 		this.domclient=domclient;
 
 
-	}
-	async init(){
+		this.state="close";
 
-		await this.initServerSocket();
+	}
+	async start(){
+		if(this.state!="close")
+			throw new Error("this producer is not in a state can be start")
 		
-//		await sleep(2000);
 
-		this.ready=true;
+		this.initServerSocket();
+
+
+		this._handleReady();
 	}
-	async initServerSocket(){
+	_handleReady(){
+		this.state="ready";
+		this.emit("ready");
+	}
+	initServerSocket(){
 
 		this.sock.onmessage("producer",(data,rinfo)=>this._handleMessage(data,rinfo));
 
-		await this.sock.ready();
+	}
+	close(){
+		//if(this.state=="close")
+		//	throw new Error("this producer is not in a state can be close");
+		if(this.state=="close")return;
+		
+		this.state="close";
 	}
 
-	_ready(){
-		return waitfor(()=>this.ready);
-	}
 
 	handle(f){//没有被ports捕捉到的包最终都会流向handler
 		if(f instanceof Function)
@@ -59,7 +71,6 @@ class producer{
 
 	}
 	async port(port,f){
-		await this._ready();
 		this.ports[port]=f;
 	}
 

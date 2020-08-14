@@ -1,45 +1,120 @@
-let producer=require(__dirname+"/producer.js");
-let consumer=require(__dirname+"/consumer.js");
-let waitfor=require(__dirname+"/utils/waitfor.js");
-let logger=require(__dirname+"/logger.js");
-let domainclient=require(__dirname+"/domain/domainclient.js");
-let socket=require(__dirname+"/socket.js");
-let plugin=require(__dirname+"/plugin.js");
+const producer=require(__dirname+"/producer.js");
+const consumer=require(__dirname+"/consumer.js");
+const DefaultLogger=require("./logger/defaultlogger.js");
+const domainclient=require(__dirname+"/domain/domainclient.js");
+const socket=require(__dirname+"/socket.js");
+const plugin=require(__dirname+"/plugin.js");
 
-class jigsaw{
+const assert=require("assert");
+const EventEmitter=require("events").EventEmitter;
+
+class jigsaw extends EventEmitter{
 	constructor(name,jgenv,options){
+		super();
+
 		if(!name)name="[Anonymous]";
 
 
 		this.name=name;
 		this.jgenv=jgenv;
-		this.sock=new socket();
-
 		this.plugins={};
+		this.state="close";
 
-		this._ready=false;
+
+		this.sock=new socket();
+		this.sock.on("ready",()=>this._onSubModuleReady("socket"));
+		this.sock.on("close",()=>this._onSubModuleClose("socket"));
 
 		this.domclient=new domainclient(this.jgenv);
-		
-		this.producer=new producer(name,jgenv,this.sock,this.domclient,options);
-		this.consumer=new consumer(name,jgenv,this.sock,this.domclient,options);
+		this.domclient.on("ready",()=>this._onSubModuleReady("domclient"));
+		this.domclient.on("close",()=>this._onSubModuleClose("domclient"));
 
-		this.init();
+		this.producer=new producer(name,jgenv,this.sock,this.domclient,options);
+		this.producer.on("ready",()=>this._onSubModuleReady("producer"));
+		this.producer.on("close",()=>this._onSubModuleClose("producer"));
+		
+		this.consumer=new consumer(name,jgenv,this.sock,this.domclient,options);
+		this.consumer.on("ready",()=>this._onSubModuleReady("consumer"));
+		this.consumer.on("close",()=>this._onSubModuleClose("consumer"));
+		
+
+		this.logger=new DefaultLogger();
+		this.start();
+	}
+	_resetReadyList(){
+		this.readylist={
+			"domclient":false,
+			"producer":false,
+			"consumer":false,
+			"socket":false
+		};
+	}
+	_onSubModuleClose(modname){
+		
+		if(this.state=="closing" || this.state=="close")
+			return;
+
+		//this.emit("error",`sub module ${modname} has been closed.`);
+		this.close();
+	}
+	_handleClose(){
+		this.state="close";
+		this.emit("close")
+	}
+	_onSubModuleReady(modname){
+		if(this.readylist[modname]){
+//			this.logger.log(`ready twice happened at ${modname}`);
+			return;
+		}
+
+		this.readylist[modname]=true;
+		let allready=true;
+		for(let key in this.readylist){
+			if(!this.readylist[key])
+				allready=false;
+		}
+
+		if(allready)
+			this._handleReady();
 
 	}
+	_handleReady(){
+		if(!this.isAnonymous()){		
+			this.logger.log(this.name,"模块已启动");
+		}
+		this.state="ready";
+		this.emit("ready");
+	}
 
-
+	getLogger(){
+		return this.logger;
+	}
 	setOption(options){
 		this.producer.options=options;
 		this.consumer.options=options;
 	}
 	async close(){
-		await this.ready();
-		
+		if(this.state=="close" || this.state=="closing")return;
+		//assert(this.state!="close",`in this state '${this.state}' can not be closed`);
+		//assert(this.state!="closing","jigsaw is closing");
+
+		this.state="closing";
+
+
+
 		await this._unloadPlugins();
+
+
+		await this.consumer.close();
+		await this.producer.close();
+		
 
 		this.sock.close();
 		this.domclient.close();
+
+
+		this.state="close";
+		this.emit("close");
 	}
 
 	async _loadPlugins(){
@@ -56,30 +131,25 @@ class jigsaw{
 			await this.plugins[i].unload();
 		}
 	}
-	async init(){
+	async start(){
+		assert(this.state=="close","in this state,jigsaw can not be started");
+
+		this._resetReadyList();
 
 		await this._loadPlugins();
 
-		await this.sock.init();
-		await this.sock.ready();
+		this.sock.start();
+
+		this.sock.once("ready",()=>{
+			this.domclient.setClientInfo({name:this.name,port:this.sock.getPort()});
+			this.domclient.start();
+
+			this.producer.start();
+			this.consumer.start();
+
+		})
 
 
-		this.domclient.setClientInfo({name:this.name,port:this.sock.getPort()});
-
-		this.domclient.init();
-		await this.domclient.ready();
-
-
-		await this.producer.init();
-		await this.consumer.init();
-
-		if(!this.isAnonymous()){		
-			logger.log(this.name,"模块已启动");
-		}
-
-		this._ready=true;
-
-		
 	}
 	isAnonymous(){//返回是否一个匿名jigsaw
 		return this.name=="[Anonymous]";
@@ -102,12 +172,6 @@ class jigsaw{
 	static setoption(name,data,jgenv){
 		return domainclient.setoption(name,data,jgenv);
 	}
-	async ready(){
-		await waitfor(()=>this.ready);
-		await this.producer._ready();
-		await this.consumer._ready();
-	//	console.log(this.producer.ports);
-	}
 
 
 }
@@ -124,7 +188,7 @@ jigsaw.use = function(plg){//注册一个插件
 
 
 //============内置插件=================
-jigsaw.use(require(__dirname+"/builtin/jigsawHoleDigger.js"));
+jigsaw.use(require(__dirname+"/plugins/jigsawHoleDigger.js"));
 
 
 

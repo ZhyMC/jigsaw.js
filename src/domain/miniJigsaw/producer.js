@@ -15,7 +15,8 @@ class producer{
 		
 		let ret=await this.ports[q.method](JSON.parse(Buffer.from(q.data,"base64").toString()));
 		//console.log("ret",ret,JSON.stringify(ret));
-		if(!ret)ret=null;
+		if(!ret)
+			ret=null;
 		
 		res.end(JSON.stringify(ret));
 	}

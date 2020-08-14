@@ -1,8 +1,10 @@
-let getdgramconn=require(__dirname+"/utils/getdgramconn.js");
-let waitfor=require(__dirname+"/utils/waitfor.js");
+const getdgramconn=require(__dirname+"/utils/getdgramconn.js");
+const assert=require("assert");
+const EventEmitter=require("events").EventEmitter;
 
-class socket{
+class socket extends EventEmitter{
 	constructor(){
+		super();
 
 		this.handler={
 			consumer:()=>{},
@@ -17,19 +19,42 @@ class socket{
 		}
 		this._ready=false;
 		this._port=0;
+
+		this.state="close";
 	}
-	async init(){
+	async start(){
+		assert(this.state=="close","in this state,socket can not be started");
+
 		this.sock=await getdgramconn();
 		this.sock.on("message",this.handlemessage.bind(this));
 		this.sock.on("listening",()=>{
 			this._port=this.sock.address().port;
-			this._ready=true
+			this._handleReady();
 		});
+
+		this.sock.on("close",()=>{
+
+			this._handleClose();
+		})
+
+	}
+	_handleClose(){
+		this.state="close";
+		this.emit("close");
+
+	}
+	_handleReady(){
+		this.state="ready";
+		this.emit("ready");
 	}
 	getPort(){
 		return this._port;
 	}
 	close(){
+		if(this.state=="close")
+			return;
+		//assert(this.state!="close","socket has already closed");
+		
 		this.sock.close();
 	}
 	send(direction,data,port,ip){
@@ -49,9 +74,6 @@ class socket{
 	}
 	onmessage(type,f){
 		this.handler[type]=f;
-	}
-	ready(){
-		return waitfor(()=>this._ready);
 	}
 }
 
