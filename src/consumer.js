@@ -122,8 +122,8 @@ class consumer extends EventEmitter{
 	}
 
 	async _call(path,obj){
-		
-		assert(this.state=="ready","can not do remote call,because consumer has not ready");
+		debug("开始进行远程调用",path,obj)
+;		assert(this.state=="ready","can not do remote call,because consumer has not ready");
 
 		await valid.sendData.checkValid(obj);
 
@@ -231,6 +231,7 @@ class consumer extends EventEmitter{
 		let timeout_timer=setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
 		let send_once=()=>{
+			debug("进行一次Socket数据发送",`长度:${tagdatas.length}`,po,ip);
 			for(let tagdata of tagdatas){
 				//console.log(packet.untag(tagdata))
 					sock.send("producer",tagdata,po,ip);
@@ -249,6 +250,7 @@ class consumer extends EventEmitter{
 		}catch(e){
 			clearInterval(resender);
 			isTimeout=true;
+
 		}
 
 

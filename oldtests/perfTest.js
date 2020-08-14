@@ -19,7 +19,7 @@ var jg2=new jigsaw();
 
 
 async function startTest(){ //5000并发测试
-let total=5000;
+let total=1000;
 let accepted=0;
 
 await jg2.send("test:get",{});//缓存一下网络地址

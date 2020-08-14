@@ -11,11 +11,11 @@ class DefaultLogger{
 
 		this.loglevel=level;
 	}
-	log(jigsaw,msg){
+	log(jigsaw,...msg){
 		if(this.loglevel=="ALL"){
 			console.log(chalk.green(`[JigSaw] `)
 				+chalk.yellow(`[${jigsaw}] `) 
-				+chalk.white(`${msg}`));
+				,...msg);
 		}
 	}
 
