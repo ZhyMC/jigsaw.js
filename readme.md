@@ -6,9 +6,11 @@ Jigsaw的中文是拼图的意思，该项目最早来源于一个思考:
   
 > 将一个服务拆分成多个微服务，最重要的是什么。  
   
-即服务模块之间的解耦，那么解耦一般都要靠一个消息组件实现，于是Jigsaw就诞生了，专门解决独立服务之间互相调用的问题。  
+服务模块之间的解耦要靠一个消息组件实现，于是Jigsaw就诞生了，专门解决独立服务之间互相调用的问题。  
   
 ----------
+
+#### 1.1.1 特性
   
 ①Jigsaw和一般的RPC框架一样，有**生产者**和**消费者**存在，但并不像普通的RPC框架一样繁琐，因为每一个**Jigsaw实例**既是生产者也是消费者。  
   
@@ -204,15 +206,21 @@ console.log(`${portname}接口收到了数据`,data);
 	若jigsaw实例同在一个内网或者互联网上，则完全不需要使用本方法。  
   
 ```
-	
-	jg.port("call",()=>{
+
+//下面的代码的执行环境可以是可以访问互联网的局域网
+
+	let lan = new jigsaw("LAN");
+	lan.port("call",()=>{
 			console.log("我被调用了")；
 		})；
 	
-	let hole=await jg.dighole("target");
+	lan.dighole("INTERNET");
 
-	jg.send(`${hole}:call`);
 
+//下面的代码的执行环境可以是互联网
+
+	let internet = new jigsaw("INTERNET");
+	internet.send(`LAN:call`);
 
 ```
 ### 1.4.6 jigsaw.setoption(jgname,option) : [Promise] 
@@ -251,18 +259,22 @@ await jigsaw.setoption("ticket",{jgcount:4});
 ------------------
 ### 1.5 测试
   
-项目文件夹的 ```test``` 目录下有几个测试，可以通过git clone该项目，并使用node运行测试。  
-  
-分别是：  
-  
-①```dighole.js``` ： 测试打洞功能。  
-②```prefTest.js``` : 500并发性能测试，用于测试jigsaw在大量并发下是否能稳定工作。  
-③```simpletest.js``` : 普通的功能测试，例如异常通过网络冒泡的功能。  
-④```weblargetest.js``` : 较大的字符串数据（400KB）网页显示测试，用于测试jigsaw的大包自动拆分功能。  
-⑤```loadbalanced.js``` : 负载均衡测试，测试各个实例能否随机平分请求。  
-⑥```delayStart.js``` : 域名服务器延迟启动测试，用于测试与域名服务器的连接健壮性。  
-⑦```closetest.js``` : 测试能否正常关闭jigsaw实例。  
+```
+本项目可以通过 mocha 框架进行测试,
+在项目目录下直接运行
 
+npm test
+
+即可开始测试
+```
+```
+另外，你还可以检查测试用例的覆盖率
+在项目目录下直接运行
+
+npm run cov
+
+即可得到覆盖率报告
+```
   
   
    
@@ -317,4 +329,3 @@ let jg=new jigsaw();
 
 
 --------------------
-文档持续更新中...  
