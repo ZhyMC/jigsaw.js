@@ -240,7 +240,9 @@ class consumer extends EventEmitter{
 		};
 
 		send_once();
-		let resender=setInterval(send_once,30);
+		
+		let timelen=Math.floor(20+20*Math.random());
+		let resender=setInterval(send_once,timelen);
 
 
 		try{

@@ -12,7 +12,8 @@
     "request": "^2.88.2"
   },
   "scripts": {
-    "test": "npx mocha -j 1 --recursive"
+    "test": "npx mocha -j 1 --recursive",
+    "cov": "npx nyc npm test"
   },
   "deprecated": false,
   "description": "Jigsaw的中文是拼图的意思，该项目最早来源于一个思考:",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "debug": "^4.1.1",
-    "mocha": "^8.1.1"
+    "mocha": "^8.1.1",
+    "nyc": "^15.1.0"
   }
 }
