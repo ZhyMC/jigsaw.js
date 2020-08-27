@@ -37,6 +37,7 @@ describe("实例测试",function(){
 		await jg2.close();
 		
 	});
+	
 	it("手动关闭能否收到close事件",function(done){
 		this.timeout(3000);
 	

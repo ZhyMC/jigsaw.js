@@ -65,12 +65,15 @@ class socket extends EventEmitter{
 		this.sock.send(Buffer.concat([prefix,data]),port,ip);
 	}
 	handlemessage(msg,rinfo){
-		let prefix=msg.slice(0,2);
-		let data=msg.slice(2,msg.length);
-		let direction=this.typemap[prefix.readUInt16BE(0)];
-//console.log(direction,data,rinfo);
+		try{
+			let prefix=msg.slice(0,2);
+			let data=msg.slice(2,msg.length);
+			let direction=this.typemap[prefix.readUInt16BE(0)];
 
-		this.handler[direction](data,rinfo);
+			this.handler[direction](data,rinfo);
+		}catch(err){
+			//console.error("Error happend when handleSocketMessage",err);
+		}
 	}
 	onmessage(type,f){
 		this.handler[type]=f;
