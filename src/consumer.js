@@ -75,7 +75,7 @@ class consumer extends EventEmitter{
 		this._checkClosed();
 
 		debug("开始关闭jigsaw实例",this.name);
-		await this.closing_defer;
+		await this.closing_defer.promise;
 		debug("成功关闭jigsaw实例",this.requests,this.name);
 
 		this.state="close";
