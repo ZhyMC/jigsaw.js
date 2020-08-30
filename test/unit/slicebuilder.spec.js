@@ -3,7 +3,7 @@ const assert=require("assert");
 let slicebuilder=new SliceBuilder();
 
 describe("SliceBuilder",function(){
-	this.timeout(10000);
+	this.timeout(30000);
 	it("10000次无法组成整体的碎片添加后,map和buildings长度还是1000",function(){
 		for(let i=0;i<10000;i++){
 			slicebuilder.setPartData(i+"",":"+i+"","0",1024,Buffer.allocUnsafe(1024));

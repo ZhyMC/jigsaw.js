@@ -142,14 +142,14 @@ class producer extends EventEmitter{
 
 			bufcount+=tagged.length;
 
-			if(bufcount>12*1024)//10KB
+			/*if(bufcount>12*1024)//10KB
 			{
 				bufcount=0;
 				await sleep(0); //flush
-			}	
+			}*/	
 
 		}
-		await sleep(0);
+//		await sleep(0);
 	}
 	rinfoToRname(rinfo){
 		return `[${rinfo.address}:${rinfo.port}]`

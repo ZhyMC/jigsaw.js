@@ -119,9 +119,9 @@ describe("传输测试",function(){
 		}).catch(done);
 	});
 
-	it("多层的对象,并且有10KB大小的数据应该可以传输",function(done){
+	it("多层的对象,并且有1MB大小的数据应该可以传输",function(done){
 
-		let bufstr=Buffer.allocUnsafe(10*1024).toString("base64");
+		let bufstr=Buffer.allocUnsafe(1024*1024).toString("base64");
 		let testobj={
 			data:{
 				data:{
@@ -181,21 +181,36 @@ describe("传输测试",function(){
 
 
 	})
+	it("尝试发送一个超过10MB的调用请求,会被直接拒绝",function(done){
+		jg2.port("recv",(obj)=>{
+			return obj;
+		});
+
+		jg.send("recver:recv",{
+			data:Buffer.allocUnsafe(10*1024*1024).toString("base64")
+		}).then(()=>{
+			done(new Error("不应该得到回复"))
+		}).catch((err)=>{
+			done();
+		});
+
+	})
 	it("在较差的网络环境,大量的发送之后,jigsaw仍然可以正常关闭",function(done){
+		this.timeout(60000);
 
 		let before=0;
 		let buf=Buffer.allocUnsafe(10*1024).toString("base64");
 		jg2.producer.drop_faker={
 			enable:true,
-			drop_rate:0.5
+			drop_rate:0.1
 		}
 
 		jg2.port("getvalue",(obj)=>{
 			return obj;
 		});
 		let p=(async()=>{
-			for(let j=0;j<10;j++){
-				if(j==2){
+			for(let j=0;j<20;j++){
+				if(j==10){
 					 before=process.memoryUsage().external;
 				}
 				let ps=[];
@@ -204,20 +219,22 @@ describe("传输测试",function(){
 				}
 				//console.log(await Promise.all(ps));
 				await Promise.all(ps);
+			console.log(j)
 			}
-		await jg2.close();
-		await jg.close();
-		await sleep(1000);
+			await jg2.close();
+			await jg.close();
+		//	await sleep(5000);
 		})();
 
 		p.then(()=>{
 
 			let after=process.memoryUsage().external;
 
-			if((after-before)/1024/1024>0.5)
+			if((after-before)/1024/1024>5)
 				done(new Error("可能内存泄露"));
 			else
 				done();
+
 		}).catch(done);
 
 

@@ -44,6 +44,9 @@ class socket extends EventEmitter{
 
 	}
 	_handleReady(){
+		this.sock.setRecvBufferSize(10*1024*1024); //10MB Buffer
+		this.sock.setSendBufferSize(10*1024*1024); //10MB Buffer
+
 		this.state="ready";
 		this.emit("ready");
 	}

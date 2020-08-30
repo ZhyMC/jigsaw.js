@@ -5,7 +5,7 @@ let responsemanager=new ResponseManager();
 
 describe("ResponseManager",function(){
 
-	this.timeout(10000);
+	this.timeout(30000);
 	it("10000次添加后,map和responsed长度还是1000",function(){
 		for(let i=0;i<10000;i++){
 			responsemanager.setResponsed(i+"",null,true);

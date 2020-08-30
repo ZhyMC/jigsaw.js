@@ -26,10 +26,20 @@ class consumer extends EventEmitter{
 		this.sock=sock;
 		this.uniqueid=this._uniqueid();
 
+		this.req_score=0;
 
 		this.state="close";
 
 		this.closing_defer;
+
+		/*setInterval(()=>{
+			console.log(this.resources);
+		},1000)*/
+
+		this.resources={
+			timer:0,
+			req:0
+		}
 
 		this._beforeSend=(path,obj)=>(path,obj);
 		this._afterSend=(res)=>(res);
@@ -78,6 +88,8 @@ class consumer extends EventEmitter{
 		await this.closing_defer.promise;
 		debug("成功关闭jigsaw实例",this.requests,this.name);
 
+		//console.log("已关闭",this.req_score);
+		
 		this.state="close";
 	}
 	_setRequest(reqid,req){
@@ -85,12 +97,21 @@ class consumer extends EventEmitter{
 	}
 	_delRequest(reqid){
 		delete this.requests[reqid];
-		this._checkClosed();
+	}
+	_offsetResources(tag,value){
+		assert(typeof(value)=="number","value must be a number");
+		this.resources[tag]+=value;
+		this._checkClosed();		
 	}
 	_checkClosed(){
-		let req_left=Object.keys(this.requests).length;
 
-		if(this.state=="closing" && req_left <= 0)//如果所有请求已经结束,那么此时可以终止producer
+		let allclosed=true;
+		for(let i in this.resources){
+			if(this.resources[i] > 0)
+				allclosed = false;
+
+		}
+		if(this.state=="closing" && allclosed)//如果所有请求已经结束,那么此时可以终止producer
 			this.closing_defer.resolve();
 	}
 
@@ -122,8 +143,9 @@ class consumer extends EventEmitter{
 	}
 
 	async _call(path,obj){
-		debug("开始进行远程调用",path,obj)
-;		assert(this.state=="ready","can not do remote call,because consumer has not ready");
+		debug("开始进行远程调用",path,obj);
+		assert(this.state=="ready","can not do remote call,because consumer has not ready");
+		assert(this.resources.req<=2000,"requests too much, can not create more request, wait a minutes.");
 
 		await valid.sendData.checkValid(obj);
 
@@ -158,9 +180,9 @@ class consumer extends EventEmitter{
 			target_jgname=chosen.jgname;
 		}
 
+		this._offsetResources("req",+1);
 
 		let req=this.buildRequest(obj,target_jgname,jgpo.port);
-
 		return this._sendRequest(req,ip,po);
 
 	}
@@ -176,7 +198,11 @@ class consumer extends EventEmitter{
 		
 		let tagdatas=[];
 
-		let bufs=packet.sliceBuffer(Buffer.from(JSON.stringify(obj)));
+
+		let rawbuffer=Buffer.from(JSON.stringify(obj));		
+		assert(rawbuffer.length < 8 * 1024 *1024);
+
+		let bufs=packet.sliceBuffer(rawbuffer);
 
 		let path=jgname+":"+jgport;
 		for(let i in bufs){
@@ -216,6 +242,8 @@ class consumer extends EventEmitter{
 
 		let defer=Q.defer();
 
+		this.req_score+=tagdatas.length;
+
 		this._setRequest(reqid,{data_defer:defer});
 
 	
@@ -228,39 +256,57 @@ class consumer extends EventEmitter{
 		let ret=null;
 
 
+
 		let timeout_timer=setTimeout(()=>defer.reject(new Error("timeout")),timeout);
 
-		let send_once=()=>{
+
+		let endtimer=false;
+
+		let send_once=(isResend)=>{
+			if(isResend)
+				this._offsetResources("timer",-1);
+
+
+			if(endtimer)
+					return;
+			
+
+			let delay=Math.floor(this.req_score+(Math.random()*30));
+			let timelen=Math.max(10,Math.min(1000,delay));
+			//console.log(timelen)
+
 			debug("进行一次Socket数据发送",`长度:${tagdatas.length}`,po,ip);
 			for(let tagdata of tagdatas){
 				//console.log(packet.untag(tagdata))
 					sock.send("producer",tagdata,po,ip);
 			}
 
+			//console.log(timelen);
+
+			setTimeout(()=>send_once(true),timelen);
+			
+			this._offsetResources("timer",+1);
 		};
 
 		send_once();
-		
-		let timelen=Math.floor(20+20*Math.random());
-		let resender=setInterval(send_once,timelen);
-
 
 		try{
 			ret=JSON.parse((await defer.promise)+"");
-			clearTimeout(timeout_timer);
-			clearInterval(resender);			
 		}catch(e){
-			clearInterval(resender);
 			isTimeout=true;
-
 		}
+			
+		clearTimeout(timeout_timer);
+		endtimer=true;
 
 
-//		clearInterval(resender);
 		let timecost=new Date().getTime() - timer;
 
 
 		this._delRequest(reqid);
+
+		this.req_score-=tagdatas.length;
+		this._offsetResources("req",-1);
 	
 		this.handleException(ret);
 		if(isTimeout)
