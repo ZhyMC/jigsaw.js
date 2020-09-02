@@ -1,8 +1,13 @@
+const debug=require("debug")("jigsaw:slicebuilder");
+
 class slicebuilder{
 	constructor(){
 		this.buildings=[];
 		this.map={};
 
+		this.expiredTime = 20 * 1000;
+
+		this.gc_counter=0;
 	}
 	hasBuilding(token){
 
@@ -36,6 +41,28 @@ class slicebuilder{
 		return false;
 	
 	}
+	checkGarbageCollect(){
+		this.gc_counter++;
+		if(this.gc_counter>=20){
+			this.doGarbageCollect();	
+			this.gc_counter=0;
+		}
+	}
+	doGarbageCollect(){
+		let newbuildings=[];
+		for(let i in this.buildings){
+			let token=this.buildings[i];
+
+			if(new Date().getTime() - this.map[token].createTime < this.expiredTime){
+				newbuildings.push(token);
+			}else 
+				delete this.map[token];
+			//由于保存的是引用,所以这个数组元素迁移过程几乎不会占用内存
+		}
+		debug("完成一次垃圾回收,回收前:",this.buildings.length,"回收后:",newbuildings.length);
+		this.buildings=newbuildings;
+
+	}
 	setPartData(from,id,partid,partmax,data){
 		let token=from+id;
 
@@ -45,8 +72,12 @@ class slicebuilder{
 			delete this.map[sft];
 		}		
 		if(!this.map[token]){
-			this.map[token]={partmax,parts:{}};
+			this.map[token]={partmax,parts:{},createTime:new Date().getTime()};
+			/*该请求从创建开始就要保证在20秒内,如果碎片没有被组成,就自动清理,
+			否则即使队列有大小限制也会使得内存占用过于庞大,浪费机器的内存资源
+			*/
 
+			this.checkGarbageCollect();
 			this.buildings.push(token);
 		}
 
