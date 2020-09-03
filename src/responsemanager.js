@@ -1,4 +1,5 @@
 const debug=require("debug")("jigsaw:responsemanager");
+const gc_debug=require("debug")("jigsaw:gc");
 
 class responsemanager{
 
@@ -39,7 +40,8 @@ class responsemanager{
 			
 			//由于保存的是引用,所以这个数组元素迁移过程几乎不会占用内存
 		}
-		debug("完成一次垃圾回收,回收前:",this.responsed.length,"回收后:",newresponsed.length);
+		if(this.responsed.length!=newresponsed.length)
+			gc_debug("完成一次垃圾回收,回收前:",this.responsed.length,"回收后:",newresponsed.length);
 		this.responsed=newresponsed;
 	}
 

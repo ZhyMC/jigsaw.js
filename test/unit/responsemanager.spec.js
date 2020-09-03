@@ -22,7 +22,7 @@ describe("ResponseManager",function(){
 		let after=(process.memoryUsage().external);
 
 		let usage=(after-before)/1024/1024;
-		let expect=1000*1024*1024/1024/1024*1.5;
+		let expect=1000*1024*1024/1024/1024*1.2;
 
 		assert(usage<expect,"内存可能泄露");
 	});

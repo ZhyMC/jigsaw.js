@@ -180,13 +180,16 @@ class consumer extends EventEmitter{
 			target_jgname=chosen.jgname;
 		}
 
-		this._offsetResources("req",+1);
-
+		
 		let req=this.buildRequest(obj,target_jgname,jgpo.port);
+
+
 		return this._sendRequest(req,ip,po);
 
 	}
 	_sendRequest(req,ip,po){
+		this._offsetResources("req",+1);
+
 		return this._doResend(req.reqid,req.tagdatas,ip,po,{
 			resend:100,
 			timeout:10000

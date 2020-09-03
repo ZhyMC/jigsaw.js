@@ -1,4 +1,5 @@
 const debug=require("debug")("jigsaw:slicebuilder");
+const gc_debug=require("debug")("jigsaw:gc");
 
 class slicebuilder{
 	constructor(){
@@ -59,7 +60,9 @@ class slicebuilder{
 				delete this.map[token];
 			//由于保存的是引用,所以这个数组元素迁移过程几乎不会占用内存
 		}
-		debug("完成一次垃圾回收,回收前:",this.buildings.length,"回收后:",newbuildings.length);
+
+		if(this.buildings.length!=newbuildings.length)
+			gc_debug("完成一次垃圾回收,回收前:",this.buildings.length,"回收后:",newbuildings.length);
 		this.buildings=newbuildings;
 
 	}

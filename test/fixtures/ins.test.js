@@ -20,14 +20,18 @@ describe("实例测试",function(){
 			jg=new jigsaw("test");
 			jg.getLogger().setLevel("NONE");
 			jg.once("ready",()=>{
-				if(++ready==2)done();
+				setTimeout(()=>{
+					if(++ready==2)done();
+				},500);
 			});
 		}
 		if(!jg2 || jg2.state=="close"){
 			jg2=new jigsaw();
 			jg2.getLogger().setLevel("NONE");
 			jg2.once("ready",()=>{
-				if(++ready==2)done();
+				setTimeout(()=>{
+					if(++ready==2)done();
+				},500);
 			})
 		}
 

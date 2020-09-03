@@ -35,7 +35,9 @@ describe("传输测试",function(){
 			jg=new jigsaw("sender");
 			jg.getLogger().setLevel("NONE");
 			jg.once("ready",()=>{
-				if(++ready==2)done();
+				setTimeout(()=>{
+					if(++ready==2)done();
+				},500);
 			});
 		}else{
 			if(++ready==2)done();
@@ -44,7 +46,9 @@ describe("传输测试",function(){
 			jg2=new jigsaw("recver");
 			jg2.getLogger().setLevel("NONE");
 			jg2.once("ready",()=>{
-				if(++ready==2)done();
+				setTimeout(()=>{
+					if(++ready==2)done();
+				},500);
 			})
 		}else{
 			if(++ready==2)done();
@@ -52,6 +56,7 @@ describe("传输测试",function(){
 
 	})
 	afterEach(async function(){
+	
 		await jg.close();
 		await jg2.close();
 	});
@@ -205,6 +210,7 @@ describe("传输测试",function(){
 			drop_rate:0.1
 		}
 
+
 		jg2.port("getvalue",(obj)=>{
 			return obj;
 		});
@@ -219,7 +225,7 @@ describe("传输测试",function(){
 				}
 				//console.log(await Promise.all(ps));
 				await Promise.all(ps);
-			console.log(j)
+			//console.log(j)
 			}
 			await jg2.close();
 			await jg.close();
@@ -230,7 +236,7 @@ describe("传输测试",function(){
 
 			let after=process.memoryUsage().external;
 
-			if((after-before)/1024/1024>5)
+			if((after-before)/1024/1024>4)
 				done(new Error("可能内存泄露"));
 			else
 				done();
