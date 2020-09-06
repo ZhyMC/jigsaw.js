@@ -11,11 +11,32 @@ const EventEmitter=require("events").EventEmitter;
 
 const debug=require("debug")("jigsaw:domainclient");
 
+
+class LimitMap{
+    constructor(){
+        this.map={};
+        this.keys=[];
+        this.limit=1000;
+    }
+    set(key,data){
+        if(this.keys.length>=this.limit)
+            delete this.map[this.keys.shift()];
+
+        if(!this.map[key])
+            this.keys.push(key);
+        
+        this.map[key]=data;
+    }
+    get(key){
+        return this.map[key];
+    }
+
+}
 class domainclient extends EventEmitter{
     constructor(jgenv) { //客户端名,客户端网络端口,客户端环境
         super();
 
-        this._addrcached = {};
+        this._addrcached = new LimitMap();
 
         //this.clientinfo = clientinfo;
         this.jgenv = jgenv;
@@ -27,6 +48,8 @@ class domainclient extends EventEmitter{
 
         this.logger=new DefaultLogger();
         this.freq = 20 * 1000;//20秒向服务器报告一次网络位置
+
+        this.gc_counter=0;
     }
     setLogger(logger){
         this.logger=logger;
@@ -96,9 +119,11 @@ class domainclient extends EventEmitter{
       
     }
     async getAddress(jgname) { //向域名服务器请求一次域名客户端的网络信息
-        if (this._addrcached[jgname] && (new Date().getTime() - this._addrcached[jgname].start) < 30 * 1000) {
-            return this._addrcached[jgname].addr;
-        }
+
+        let cached=this._addrcached.get(jgname);  
+        if (cached && new Date().getTime() - cached.start < 30 * 1000)
+            return cached.addr;
+        
 
         debug(`尝试获取 ${jgname} 的网络地址`);
         let ad=[];
@@ -106,6 +131,7 @@ class domainclient extends EventEmitter{
 
         for(let c=0;c<6;c++){
             ad=await this._send("getinfo",{jgname});
+
             if(ad.length>0)
                 break;
             else{
@@ -120,11 +146,7 @@ class domainclient extends EventEmitter{
 
         debug(`得到的结果`,ad);
 
-         if (!this._addrcached[jgname])
-            this._addrcached[jgname] = {};
-
-        this._addrcached[jgname].start = new Date().getTime();
-        this._addrcached[jgname].addr = ad;
+        this._addrcached.set(jgname,{ start:new Date().getTime(),addr:ad});
         return ad;
 
     }

@@ -185,6 +185,38 @@ describe("传输测试",function(){
 		}
 
 
+	});
+	it("测试setoption的jgcount选项",function(done){
+		let j1=new jigsaw("jg");
+		let j2=new jigsaw("jg@1");
+		j1.getLogger().setLevel("NONE");
+		j2.getLogger().setLevel("NONE");
+		
+		let count1=0;
+		let count2=0;
+		
+		j1.port("call",()=>{
+			count1++;
+		});
+
+		j2.port("call",()=>{
+			count2++;
+		});
+		
+		jigsaw.setoption("jg",{jgcount:2});
+
+		setTimeout(async()=>{
+			for(let i=0;i<1000;i++)
+				await jg.send("jg:call",{abc:123});
+			await j1.close();
+			await j2.close();
+
+			if(Math.abs(count1-count2)<100)
+				done();
+			else
+				done(new Error("负载均衡没有生效"));
+		},1000);
+
 	})
 	it("尝试发送一个超过10MB的调用请求,会被直接拒绝",function(done){
 		jg2.port("recv",(obj)=>{
@@ -236,7 +268,7 @@ describe("传输测试",function(){
 
 			let after=process.memoryUsage().external;
 
-			if((after-before)/1024/1024>4)
+			if((after-before)/1024/1024>5)
 				done(new Error("可能内存泄露"));
 			else
 				done();

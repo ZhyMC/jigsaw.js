@@ -22,14 +22,16 @@ describe("域名服务器测试",function(){
 					done(new Error("第一次请求得到了错误应答"))
 				else{
 					domserver.kill();
-
+		
 					await sleep(30000);
+		
 					try{
 						await jg2.send("jg:get");
 						done(new Error("此时不可能得到应答,却得到了应答"));
 					}catch(e){
 
 					}
+		
 					domserver=domainserver();
 					await sleep(25000);
 
