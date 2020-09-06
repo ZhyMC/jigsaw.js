@@ -1,6 +1,5 @@
 const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
 
-const http = require('http');
 const jigsawenv = require(__dirname+"/../jigsawenv.js");
 const jigsaw = require(__dirname+"/../jigsaw.js");
 const logger = console;
