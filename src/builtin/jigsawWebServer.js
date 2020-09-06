@@ -1,23 +1,23 @@
-var sleep=(t)=>new Promise((y)=>setTimeout(y,t));
+const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
 
-var http = require('http');
-var jigsawenv = require(__dirname+"/../jigsawenv.js");
-var jigsaw = require(__dirname+"/../jigsaw.js");
-var logger = require(__dirname+"/../logger.js");
+const http = require('http');
+const jigsawenv = require(__dirname+"/../jigsawenv.js");
+const jigsaw = require(__dirname+"/../jigsaw.js");
+const logger = console;
 
-var https = require("https");
-var http = require("http");
-var URL = require("url");
-var querystring = require("querystring");
-var Busboy = require("busboy");
-var cluster = require("cluster");
-var q = require("q");
-var ContentType=require("content-type");
-var assert = require("assert")
+const https = require("https");
+const http = require("http");
+const URL = require("url");
+const querystring = require("querystring");
+const Busboy = require("busboy");
+const cluster = require("cluster");
+const q = require("q");
+const ContentType=require("content-type");
+const assert = require("assert")
 
-var JGO = jigsawenv.unserialize(process.argv[2]);
-var PORT = process.argv[3];
-var CERT = JSON.parse(process.argv[4]);
+const JGO = jigsawenv.unserialize(process.argv[2]);
+const PORT = process.argv[3];
+const CERT = JSON.parse(process.argv[4]);
 
 
 	class jigsawWebServer {
@@ -27,7 +27,7 @@ var CERT = JSON.parse(process.argv[4]);
 			cluster.isWorker=false;//解决windows下NOTSUP问题
 
 			this.jg = new jigsaw("",jgenv);
-			this.jg.ready().then(()=>{
+			this.jg.on("ready",()=>{
 				cluster.isWorker=true;
 			});
 
