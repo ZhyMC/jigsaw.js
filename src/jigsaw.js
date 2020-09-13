@@ -86,6 +86,9 @@ class jigsaw extends EventEmitter{
 		this.state="ready";
 		this.emit("ready");
 	}
+	getDomainClient(){
+		return this.domclient;
+	}
 	setLogger(logger){
 		this.logger=logger;
 		this.producer.setLogger(logger);
@@ -166,6 +169,9 @@ class jigsaw extends EventEmitter{
 		})
 
 
+	}
+	getSocket(){
+		return this.sock;
 	}
 	isAnonymous(){//返回是否一个匿名jigsaw
 		return this.name=="[Anonymous]";

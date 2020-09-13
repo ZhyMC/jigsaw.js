@@ -1,7 +1,8 @@
-const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
+const util=require("util");
+const sleep=util.promisify(setTimeout);
 
-const jigsawenv = require(__dirname+"/../jigsawenv.js");
-const jigsaw = require(__dirname+"/../jigsaw.js");
+const jigsawenv = require("../jigsawenv");
+const jigsaw = require("../jigsaw");
 const logger = console;
 
 const https = require("https");

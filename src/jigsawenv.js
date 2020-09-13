@@ -1,19 +1,19 @@
 //定义了jigsaw选项的构成
 
 /*
-interfaceip:"指定了jigsaw要绑定在哪个网卡接口上",
-port:"指定了jigsaw要绑定在套接字的哪个端口上"
+entry:"指定了jigsaw要绑定在哪个网卡接口上",
+domainserver:"指定了jigsaw网络的域名服务器"
 
 */
 
 
-class jigsawoption{
-	constructor(interfaceip,domainserver){
-		this.interfaceip=interfaceip;
+class jgenv{
+	constructor(entry,domainserver){
+		this.entry=entry;
 		this.domainserver=domainserver;
 	}
 	toString(){//把option转为字符串
-		return `${this.interfaceip}-${this.domainserver}`;
+		return `${this.entry}-${this.domainserver}`;
 	}
 	serialize(){//序列化
 		return Buffer.from(this.toString()).toString("base64");
@@ -21,15 +21,15 @@ class jigsawoption{
 
 }
 
-jigsawoption.unserialize=(str)=>{
-return jigsawoption.fromString(Buffer.from(str,"base64")+"")
+jgenv.unserialize=(str)=>{
+return jgenv.fromString(Buffer.from(str,"base64")+"")
 
 }
-jigsawoption.fromString=(str)=>{
+jgenv.fromString=(str)=>{
 let [a,b]=str.split("-");
-return new jigsawoption(a,b);
+return new jgenv(a,b);
 
 }
 
 
-module.exports=jigsawoption;
+module.exports=jgenv;

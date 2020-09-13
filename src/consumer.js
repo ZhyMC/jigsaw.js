@@ -1,14 +1,16 @@
-const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
-const domainclient=require(__dirname+"/domain/domainclient.js");
-const packet=require(__dirname+"/packet.js");
-const getdgramconn=require(__dirname+"/utils/getdgramconn.js");
-const slicebuilder=require(__dirname+"/slicebuilder.js");
-const valid=require(__dirname+"/valid.js");
-const md5=(x)=>require("crypto").createHash("md5").update(x+"").digest("hex");
-
+const util=require("util");
+const domainclient=require("./domain/domainclient");
+const getdgramconn=require("./utils/getdgramconn");
+const slicebuilder=require("./slicebuilder");
+const packet=require("./packet");
+const valid=require("./valid");
+const sleep=util.promisify(setTimeout);
+const crypto=require("crypto");
 const Q=require("q");
 const assert=require("assert");
 const EventEmitter=require("events").EventEmitter;
+const md5=(x)=>crypto.createHash("md5").update(x+"").digest("hex");
+
 const debug=require("debug")("jigsaw:consumer");
 
 class consumer extends EventEmitter{
@@ -136,6 +138,7 @@ class consumer extends EventEmitter{
 		this._afterSend=f;
 	}
 	async send(_path,_obj){
+
 		let {path,obj} = await this._beforeSend(_path,_obj);
 		let res = await this._call(path,obj);
 		let result = await this._afterSend(res,_path,_obj,path,obj);
@@ -152,9 +155,9 @@ class consumer extends EventEmitter{
 		if(typeof(obj)!="object")
 			obj={};
 
+
 		let jgpo=packet.parsePath(path);
-		let parsedrname=this.parseRname(jgpo.jg);
-	
+		let parsedrname=this.parseRname(jgpo.jg);	
 
 		let target_jgname=jgpo.jg;
 

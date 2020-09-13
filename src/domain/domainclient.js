@@ -11,6 +11,7 @@ const EventEmitter=require("events").EventEmitter;
 
 const debug=require("debug")("jigsaw:domainclient");
 
+class NetAddressError extends Error{constructor(o){super(o)}};
 
 class LimitMap{
     constructor(){
@@ -36,10 +37,15 @@ class domainclient extends EventEmitter{
     constructor(jgenv) { //客户端名,客户端网络端口,客户端环境
         super();
 
+        assert(jgenv,"jgenv 必须被指定");
+        assert(jgenv.domainserver, "jgenv.domainserver 必须被指定");
+
         this._addrcached = new LimitMap();
 
         //this.clientinfo = clientinfo;
         this.jgenv = jgenv;
+        this.netaddress;
+        
         this.consumer = new consumer(this.jgenv.domainserver);
 
         this.state="close";
@@ -50,12 +56,39 @@ class domainclient extends EventEmitter{
         this.freq = 20 * 1000;//20秒向服务器报告一次网络位置
 
         this.gc_counter=0;
+
+    }
+    _initNetAddress(){
+        if(!this.jgenv.entry)
+            throw new Error("dont have a entry specified");
+
+        this.setNetAddress(`${this.jgenv.entry}:${this.clientinfo.port}`);
+    }
+    setEntry(entry){
+        this.jgenv.entry = entry;
+    }
+    setDomainServer(server){
+        this.jgenv.domainserver = server;
+    }
+    setNetAddress(addr){
+        this.netaddress=addr;
+    }
+    getNetAddress(){
+        if(!this.netaddress)
+            throw new NetAddressError("can not get a netaddress");
+        return this.netaddress;
     }
     setLogger(logger){
         this.logger=logger;
     }
     setClientInfo(clientinfo){
         this.clientinfo=clientinfo;
+
+        try{
+            this._initNetAddress();
+        }catch(err){
+
+        }
     }
     close(){
         assert(this.state!="close","this domain client has already closed");
@@ -114,9 +147,16 @@ class domainclient extends EventEmitter{
         return await consumer.send(method,data);
     }
     async update() { //向域名服务器同步一次域名客户端的信息
-        debug("开始向域名服务器同步一次网络地址",this.clientinfo.name,this.jgenv.interfaceip,this.clientinfo.port);
-        return await this._send("update",{jgname:this.clientinfo.name,addr:`${this.jgenv.interfaceip}:${this.clientinfo.port}`})
-      
+        
+        try{
+            let addr=this.getNetAddress();
+            debug("开始向域名服务器同步一次网络地址",this.clientinfo.name,addr);
+            return await this._send("update",{jgname:this.clientinfo.name,addr})
+        }catch(err){
+            if(err instanceof NetAddressError){
+
+            }else throw err;
+        }
     }
     async getAddress(jgname) { //向域名服务器请求一次域名客户端的网络信息
 

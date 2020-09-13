@@ -2,8 +2,8 @@ const sleep=(t)=>new Promise((y)=>setTimeout(y,t));
 const asyncloop=require(__dirname+"/../utils/asyncloop.js");
 
 const parsePath=(path)=>{
-	let [jgname,method]=path.split(":");
-	return {jgname,method};
+	let loc=path.lastIndexOf(":");
+	return {jgname:path.substr(0,loc),method:path.substring(loc+1,path.length)};
 }
 const buildPath=({jgname,method})=>{
 	return jgname+":"+method;
@@ -36,8 +36,10 @@ class jigsawHoleDigger{
 	}
 	async hooked_send(path,data){
 //		if(this.holes_recv[path])
+
 		let {jgname,method}=parsePath(path);
 //		console.log(path,jgname,this.holes_recv)
+	
 		if(this.holes_recv[jgname]){
 			jgname=this.holes_recv[jgname];
 		}
