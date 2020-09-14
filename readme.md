@@ -33,7 +33,7 @@ Jigsaw的中文是拼图的意思，该项目最早来源于一个思考:
 ------------
 human.js  
 ```
-let {jigsaw}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
+const {jigsaw}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
 
 let human=new jigsaw("human");//这是一个jigsaw实例
 
@@ -44,7 +44,7 @@ human.send("gun:shoot",{bullets:10});
   
 gun.js  
 ```
-let {jigsaw}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
+const {jigsaw}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
 
 let gun=new jigsaw("gun");
 
@@ -60,16 +60,20 @@ return {msg:`我已经发射了${bullets}颗子弹`}；
 index.js  
 ```
 let {domainserver,webserver}=require("jigsaw.js")("127.0.0.1","127.0.0.1");
-//第一个参数指的是需要绑定到的网卡IP地址，一般默认为127.0.0.1表示绑定到本机IP地址，这样的情况下，所有Jigsaw实例只能在本机内任意通信。
-//第二个参数指的是domainserver域名服务器所在主机的IP地址。默认是本机。
+//第一个参数指的是能访问该实例的网络入口地址，一般默认为127.0.0.1则表示其他实例可以通过127.0.0.1这个地址访问该实例，
+	这样的情况下，所有Jigsaw实例只能在本机内任意通信。
 
-//这两个参数决定了Jigsaw实例的环境，一般来说，可以互相访问的Jigsaw实例，这两个参数全部都是一样的。
+//第二个参数指的是domainserver运行了域名服务器的主机的IP地址,默认可以是本机，一个域名服务器决定了一个完整的作用区域。
 
-let {fork}=require("child_process");
+//这两个参数决定了Jigsaw网络，一般来说，可以互相访问的Jigsaw实例，这两个参数全部都是一样的。
+
+const {fork}=require("child_process");
 
 domainserver();//一个Jigsaw网络内至少要启动一个域名服务器，所有Jigsaw实例都可以使用该域名服务器
 
 webserver(1793);//本行可以不写，本行可以启动一个访问Jigsaw网络的Web服务器。
+mapper();//启动一个映射器，会在网络内启动一个名叫Mapper的jigsaw实例，用于处理其他网络映射到该网络的请求。
+
 
 fork("human.js");
 fork("gun.js");
@@ -84,12 +88,12 @@ fork("gun.js");
 
 该文件在```examples/simpleaccount.js```
 ```
-let {jigsaw,domainserver,webserver}=require("../index.js")("127.0.0.1","127.0.0.1");
- domainserver();
- webserver(80);
+const {jigsaw,domainserver,webserver}=require("../index.js")("127.0.0.1","127.0.0.1");
 
+domainserver();
+webserver(80);
 
- let accounts=[];
+let accounts=[];
 
 let jg=new jigsaw("account");
 
@@ -116,11 +120,14 @@ jg.port("login",({userid,password})=>{
 })
 
 ```
-用```node simpleaccount.js```启动后。  
-  
-可以通过  
-```http://127.0.0.1/account/register?username=testuser&password=123```  
+用```node simpleaccount.js```启动后。    
+     
+可以通过     
+     
+```http://127.0.0.1/account/register?username=testuser&password=123```     
+     
 ```http://127.0.0.1/account/login?userid=0&password=123```  
+
 进行测试  
   
 
@@ -140,14 +147,15 @@ let jg = new jigsaw("myjigsaw");
 为jigsaw实例声明一个接口，第一个参数是接口名，第二个参数是该接口被调用后触发的函数，该函数可以是一个异步函数（async function）。  
   
 ```
+const sleep=(t)=>new Promise((r)=>setTimeout(r,t));
+
 jg.port("add",(a,b)=>{
-return a+b;
+	return a+b;
 })
 
 jg.port("addasync",async(a,b)=>{
-let sleep=(t)=>new Promise((r)=>setTimeout(r,t));
-await sleep(1000);
-return a+b;
+	await sleep(1000);
+	return a+b;
 })
 ```
   
@@ -179,7 +187,6 @@ jg.handle({
     async reload(){
     
     }
-    
 })
 
 ```
@@ -188,23 +195,23 @@ jg.handle({
 ```
 jg.handle((portname,data)=>{
 
-console.log(`${portname}接口收到了数据`,data);
+	console.log(`${portname}接口收到了数据`,data);
 
 })
 
 ```
 
-### 1.4.5 jigsaw.prototype.dighole(targetjigsaw)  :  [Promise]
+### 1.4.5 jigsaw.prototype.dighole(targetjigsaw)  :  [Promise]  **过时的**
 
-	向目标的jigsaw打一个"洞"，目标jigsaw通过该"洞"可以稳定的访问本jigsaw。  
-  
-	你可以像这样向"洞"发送数据，就和jigsaw的远程调用方法是一样的  
+	向目标的jigsaw打一个"洞"，之后目标jigsaw可以直接访问本jigsaw。  
   
 	对于内网的jigsaw实例访问外网的jigsaw实例，若希望通信可以双向畅通无阻，  
-	那么应当使用该方法打出一个"洞"，使用该"洞"作为jigsaw的名字进行远程调用。  
-  
+	那么应当使用该方法打出一个"洞"。  
+    
 	若jigsaw实例同在一个内网或者互联网上，则完全不需要使用本方法。  
-  
+    
+  	**[请注意，该方法已经过时，在之后的版本随时会移除该方法，请使用Mapper及Mapping替代]**
+
 ```
 
 //下面的代码的执行环境可以是可以访问互联网的局域网
@@ -224,7 +231,8 @@ console.log(`${portname}接口收到了数据`,data);
 
 ```
 ### 1.4.6 jigsaw.setoption(jgname,option) : [Promise] 
-	对特定的jigsaw名进行配置选项，该配置会一直保存在域名服务器上。  
+
+对特定的jigsaw名进行配置选项，该配置会一直保存在域名服务器上。  
 该选项对象中有如下属性  
   
 ①jgcount  
@@ -249,13 +257,66 @@ ticket@3
 该方法是一个静态方法，用法应当是  
 ```
 await jigsaw.setoption("ticket",{jgcount:4});
-
 ```
 ### 1.4.7 jigsaw.prototype.close()
   
 直接关闭 jigsaw 实例，jigsaw内部的套接字实例、保持连接的域名客户端也会因此被关闭。  
   
-  
+
+### 1.4.8 mapper()
+    
+mapper函数可以通过这样的方式取出并使用    
+    
+```
+const {mapper} = require("jigsaw.js")(entry,domainserver);
+let ins = mapper();
+```
+    
+调用Mapper函数后，会启动一个并返回映射器实例，该实例会维护一个映射池，    
+允许内网或者其它网络的Jigsaw实例在本网络内存在一个副本Jigsaw实例。    
+    
+向副本Jigsaw实例发送数据则相当于直接向原Jigsaw实例发送数据。    
+    
+### 1.4.9 mapping(jigsaw)
+    
+mapping函数可以通过这样的方式取出并使用    
+    
+    
+lan.js
+```
+const {jigsaw,mapping} = require("jigsaw.js")(null,"internet.com");
+
+let LAN=new jigsaw("LAN");
+mapping(LAN);
+
+LAN.port("whoareyou",()=>{
+	return "i am LAN";
+});
+```
+    
+之后目标的网络，（指的是entry以及domainserver一起组成的jigsaw网络，可能是一个在互联网上的jigsaw网络）。    
+可以随意穿过内网和外网的限制任意访问该LAN代表的jigsaw实例。    
+    
+注意这里entry设置为null，则代表该LAN没有任何网络入口可以访问，则不会向域名服务器请求注册自己的网络地址。    
+因为LAN是在局域网的，在外部没有网络入口可以访问的到。之后再使用Mapping将其映射到公网的网络上。    
+    
+注意lan.js一般是在局域网运行的，下面这个例子是在互联网上运行的，将演示互联网上如何访问已经被mapping的jigsaw实例。    
+    
+internet.js
+```
+const {jigsaw,domainserver,mapper} = require("jigsaw.js")("internet.com","internet.com");
+
+domainserver();//启动一个域名服务器
+mapper();//启动一个映射器用于接收来自局域网的映射请求
+
+let jg = new jigsaw("internet");//创建一个在互联网上的jigsaw实例
+
+setInterval(()=>{
+	jg.send("LAN:whoareyou").then(console.log);//尝试直接调用局域网的jigsaw
+},5000);
+
+```
+
 ------------------
 ### 1.5 测试
   
@@ -279,18 +340,18 @@ npm run cov
   
    
 ### 2.1 负载均衡 与 网络IO
-    
+
 一般来说一个分布式系统的负载均衡的实现应当在RPC框架上。所以jigsaw实现了基本的负载均衡。   
-    
- jigsaw实例可以存在在进程上，那么如果启动多个进程，使用了```jigsaw.setoption```方法使得域名服务器开始对请求分流。各个进程就可以等量的处理流量。   
-   
- 因为要保证数据的唯一性，传统的负载均衡应用实现都要依赖数据库。   
-   
- 理想的分布式系统是没有系统之间进行数据交换的成本的，也就是说，RPC框架之间进行通信的需要的时间和空间几乎为0. 那么理论上任何系统都可以无限拓展，不受性能的约束。    
-  
- 但是现实并不是这样的，RPC框架进行一次数据交换，一般靠的是操作系统提供的套接字接口。那么网络IO就需要占用一定的时间。任何分布式系统的设计都应当考虑进去这一点。对于一个方法需要大量远程调用的请求应当重新考虑设计。    
-  
- 由于Jigsaw基于node.js，并且场景为IO密集型，并且是异步IO，所以网络IO的性能是较好的，这也是选择在node.js下开发一款RPC框架的原因。  
+
+jigsaw实例可以存在在进程上，那么如果启动多个进程，使用了```jigsaw.setoption```方法使得域名服务器开始对请求分流。各个进程就可以等量的处理流量。   
+
+因为要保证数据的唯一性，传统的负载均衡应用实现都要依赖数据库。   
+
+理想的分布式系统是没有系统之间进行数据交换的成本的，也就是说，RPC框架之间进行通信的需要的时间和空间几乎为0. 那么理论上任何系统都可以无限拓展，不受性能的约束。    
+
+但是现实并不是这样的，RPC框架进行一次数据交换，一般靠的是操作系统提供的套接字接口。那么网络IO就需要占用一定的时间。任何分布式系统的设计都应当考虑进去这一点。对于一个方法需要大量远程调用的请求应当重新考虑设计。    
+
+由于Jigsaw基于node.js，并且场景为IO密集型，并且是异步IO，所以网络IO的性能是较好的，这也是选择在node.js下开发一款RPC框架的原因。  
 
   
 ### 2.2 推荐的命名规范
@@ -302,6 +363,7 @@ npm run cov
  	可以按照功能从命名上对Jigsaw实例进行分组。  
   
  	例如这样使用点符号作为命名空间  
+
  ```
  app.auth //应用的认证层入口,用于鉴权等
 
@@ -314,7 +376,7 @@ npm run cov
  ```
   
   
-	Jigsaw实例的命名并不会影响到Jigsaw的使用，事实上，大部分字符都可以作为名字。  
+Jigsaw实例的命名并不会影响到Jigsaw的使用，事实上，大部分字符都可以作为名字。  
 
 ②适当的时候可以匿名  
 
@@ -326,6 +388,12 @@ let jg=new jigsaw();
 一般这种实例并不设置接受远程调用的接口，当然要设置也是可以的。  
 但只能通过打洞的方式进行访问。  
 
-
-
 --------------------
+
+### 2.3 内网穿透与映射器
+    
+Mapper和Mapping用于解决内网穿透的问题，由于需求频率高，所以直接嵌入了jigsaw.js的实例内部。    
+原理是将内网的jigsaw实例直接映射到外网的jigsaw网络内，使得部署jigsaw实例十分的方便。    
+       
+只要服务器启动了一个Mapper，那么随意在局域网下mapping一个jigsaw实例，之后mapping会自动维护与mapper的连接。     
+使得被mapping的该jigsaw实例直接会成为远端服务器内的一个等效的jigsaw实例，所有网络好似串联在一起一样。       
